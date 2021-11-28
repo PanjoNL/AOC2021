@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/Win32/Debug
+/__history
+/AdventOfCode2021.dproj.local
+/__recovery
