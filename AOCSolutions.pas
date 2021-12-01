@@ -10,11 +10,11 @@ uses
 
 type
   TAdventOfCodeDay1 = class(TAdventOfCode)
+  private
+    function SonarSweep(Const OffSet: integer): integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
-    procedure BeforeSolve; override;
-    procedure AfterSolve; override;
   end;
 
 {$REGION 'placeholder'}
@@ -34,27 +34,26 @@ type
 implementation
 
 {$Region 'TAdventOfCodeDay1'}
-procedure TAdventOfCodeDay1.BeforeSolve;
-begin
-
-end;
-
-procedure TAdventOfCodeDay1.AfterSolve;
-begin
-
-end;
 
 function TAdventOfCodeDay1.SolveA: Variant;
-//var Split: TStringDynArray;
 begin
-//  Split := SplitString(FInput[0], ';');
-
+  Result := SonarSweep(1);
 end;
 
 function TAdventOfCodeDay1.SolveB: Variant;
 begin
-
+  Result := SonarSweep(3);
 end;
+
+function TAdventOfCodeDay1.SonarSweep(Const OffSet: integer): integer;
+var i: integer;
+begin
+  Result := 0;
+  for i := 0 to FInput.Count-OffSet-1 do
+    if StrToInt(FInput[i]) < StrToInt(FInput[i+OffSet]) then
+      Inc(Result);
+end;
+
 {$ENDREGION}
 {$Region 'Placeholder'}
 (*
