@@ -130,19 +130,15 @@ end;
 
 procedure TAdventOfCode.LoadInput;
 var FilePath: string;
-
-  procedure _DownLoadInput;
-  begin
-    AOCUtils.DownLoadPuzzleInput(FInput, DayIndex, FConfig);
-    FInput.SaveToFile(FilePath);
-  end;
-
 begin
   FilePath := InputFilePath;
   if FileExists(FilePath) then
     FInput.LoadFromFile(FilePath)
   else
-    _DownLoadInput;
+  begin
+    AOCUtils.DownLoadPuzzleInput(FInput, DayIndex, FConfig);
+    FInput.SaveToFile(FilePath);
+  end;
 end;
 
 procedure TAdventOfCode.Solve;
