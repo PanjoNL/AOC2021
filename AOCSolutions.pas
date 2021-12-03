@@ -119,22 +119,18 @@ end;
 function TAdventOfCodeDay3.SolveA: Variant;
 var
   s: string;
-  OneBits: TDictionary<integer, integer>;
+  OneBits: array of Integer;
   i, current, GammaRate, EpsilonRate, NoOneBits, NoZeroBits: integer;
 begin
-  OneBits := TDictionary<integer, integer>.Create;
+  SetLength(OneBits, Length(FInput[0])+1);
   for s in FInput do
     for i := 1 to Length(s) do
       if s[i] = '1' then
-      begin
-        OneBits.TryGetValue(i, current);
-        inc(current);
-        OneBits.AddOrSetValue(i, current);
-      end;
+        OneBits[i] := OneBits[i] + 1;
 
   GammaRate := 0;
   EpsilonRate := 0;
-  for i := 1 to OneBits.Count do
+  for i := 1 to Length(OneBits) do
   begin
     NoOneBits := OneBits[i];
     NoZeroBits := FInput.Count - NoOneBits;
@@ -149,7 +145,6 @@ begin
   end;
 
   Result := EpsilonRate * GammaRate;
-  OneBits.Free;
 end;
 
 function TAdventOfCodeDay3.SolveB: Variant;
