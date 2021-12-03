@@ -25,6 +25,12 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay3 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -109,6 +115,88 @@ begin
   Result := depth * hPosition;
 end;
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay3'}
+function TAdventOfCodeDay3.SolveA: Variant;
+var
+  s: string;
+  OneBits: TDictionary<integer, integer>;
+  i, current, GammaRate, EpsilonRate, NoOneBits, NoZeroBits: integer;
+begin
+  OneBits := TDictionary<integer, integer>.Create;
+  for s in FInput do
+    for i := 1 to Length(s) do
+      if s[i] = '1' then
+      begin
+        OneBits.TryGetValue(i, current);
+        inc(current);
+        OneBits.AddOrSetValue(i, current);
+      end;
+
+  GammaRate := 0;
+  EpsilonRate := 0;
+  for i := 1 to OneBits.Count do
+  begin
+    NoOneBits := OneBits[i];
+    NoZeroBits := FInput.Count - NoOneBits;
+
+    GammaRate := GammaRate shl 1;
+    EpsilonRate := EpsilonRate shl 1;
+
+    if NoOneBits > NoZeroBits  then
+      inc(GammaRate)
+    else
+      inc(EpsilonRate);
+  end;
+
+  Result := EpsilonRate * GammaRate;
+  OneBits.Free;
+end;
+
+function TAdventOfCodeDay3.SolveB: Variant;
+
+  function _FindDiagnosticValue(Const KeepLeastCommenValue: boolean): integer;
+  var
+    TempInput: TStringList;
+    NoOneBits, NoZeroBits, BitIndex, i: Integer;
+    KeepZero: boolean;
+    s: string;
+  begin
+    TempInput := TStringList.Create;
+    TempInput.Assign(FInput);
+
+    for BitIndex := 1 to Length(FInput[0]) do
+    begin
+      NoOneBits := 0;
+      NoZeroBits := 0;
+
+      for s in TempInput do
+      if s[BitIndex] = '1' then
+        inc(NoOneBits)
+      else
+        inc(NoZeroBits);
+
+      KeepZero := NoZeroBits > NoOneBits;
+      if KeepLeastCommenValue then
+        KeepZero := not KeepZero;
+
+      for i := TemPInput.Count-1 downTo 0 do
+        if (TemPInput[i][BitIndex] = '1') and KeepZero then
+          TempInput.Delete(i)
+        else if (TemPInput[i][BitIndex] = '0') and (not KeepZero) then
+          TempInput.Delete(i);
+
+      if TempInput.Count = 1 then
+        break;
+    end;
+
+    Result := BitStringToInt(TempInput[0]);
+    TempInput.Free;
+  end;
+
+begin
+  Result := _FindDiagnosticValue(False) * _FindDiagnosticValue(True);
+end;
+{$ENDREGION}
 
 
 
@@ -137,7 +225,7 @@ end;
 {$ENDREGION}
 
 initialization
-  RegisterClasses([TAdventOfCodeDay1, TAdventOfCodeDay2]);
+  RegisterClasses([TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3]);
 
 end.
 

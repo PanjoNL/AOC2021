@@ -37,8 +37,12 @@ type
 
 function GCD(Number1, Number2: int64): int64;
 function OccurrencesOfChar(const S: string; const C: string): integer;
+function BitStringToInt(Const aBit: string): integer;
 
 implementation
+
+uses
+  System.strUtils;
 
 class function AOCUtils.GetAdventOfCode: TList<TAdventOfCodeRef>;
 var
@@ -217,6 +221,22 @@ begin
   for i := 1 to Length(S) do
     if S[i] = C then
       inc(result);
+end;
+
+function BitStringToInt(Const aBit: string): integer;
+var i: Integer;
+begin
+  Result := 0;
+  for i := 1 to Length(aBit) do
+  begin
+    Result := Result shl 1;
+    case IndexStr(aBit[i], ['0', '1']) of
+      0:; //Do nothing
+      1: Inc(Result);
+    else
+      raise Exception.CreateFmt('BitStringToInt encounterd: %s', [aBit[i]]);
+    end;
+  end;
 end;
 
 
