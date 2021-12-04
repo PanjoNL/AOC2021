@@ -39,6 +39,9 @@ function GCD(Number1, Number2: int64): int64;
 function OccurrencesOfChar(const S: string; const C: string): integer;
 function BitStringToInt(Const aBit: string): integer;
 
+Const
+  MaxInt64: Int64 = 9223372036854775807;
+
 implementation
 
 uses

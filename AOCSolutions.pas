@@ -33,12 +33,11 @@ type
 
   TAdventOfCodeDay4 = class(TAdventOfCode)
   private
-    GameResults: TList<Int64>;
+    BestGame, WorstGame: Int64;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
-    procedure AfterSolve; override;
   end;
 
 {$REGION 'placeholder'}
@@ -206,16 +205,18 @@ end;
 procedure TAdventOfCodeDay4.BeforeSolve;
 var
   s: string;
-  Numbers, card: TStringDynArray;
+  BingoNumbers, card: TStringDynArray;
   BingcoCard: Array[0..24] of integer;
   Round, GameResult: Int64;
-  Base, x,y, CurrentNumber: Integer;
+  Base, x, y, CurrentNumber: Integer;
   HasWon: Boolean;
 begin
-  GameResults := TList<Int64>.create;
-  Numbers := SplitString(FInput[0], ',');
-
+  WorstGame := 0;
+  BestGame := MaxInt64;
   Base := 2;
+
+  BingoNumbers := SplitString(FInput[0], ',');
+
   while Base < FInput.Count -1 do
   begin
     for y := 0 to 4 do
@@ -225,12 +226,12 @@ begin
       for x := 0 to 4 do
         BingcoCard[x+5*y] := StrToInt(Card[x]);
 
-      Base := Base + 1;
+      Inc(Base);
     end;
-    Base := Base + 1;
+    Inc(base);
 
     Round := 0;
-    for s in Numbers do
+    for s in BingoNumbers do
     begin
       CurrentNumber := StrToInt(s);
       inc(round);
@@ -252,51 +253,24 @@ begin
         if BingcoCard[x] > 0 then
           GameResult := GameResult + CurrentNumber * BingcoCard[x];
 
-        GameResult := (GameResult shl 32) + Round;
-        GameResults.Add(GameResult);
+        GameResult := (Round shl 32) + GameResult;
+        BestGame := Min(BestGame, GameResult);
+        WorstGame := Max(WorstGame, GameResult);
+
         break;
       end;
     end;
   end;
 end;
 
-procedure TAdventOfCodeDay4.AfterSolve;
-begin
-  GameResults.Free;
-end;
-
 function TAdventOfCodeDay4.SolveA: Variant;
-var
-  Round, BestRound: integer;
-  Game: Int64;
 begin
-  BestRound := MaxInt;
-  for Game in GameResults do
-  begin
-    Round := Game and MaxInt;
-    if Round < BestRound then
-    begin
-      Result := Game shr 32;
-      BestRound := Round;
-    end;
-  end;
+  Result := BestGame and MaxInt;
 end;
 
 function TAdventOfCodeDay4.SolveB: Variant;
-var
-  Round, BestRound: integer;
-  Game: Int64;
 begin
-  BestRound := 0;
-  for Game in GameResults do
-  begin
-    Round := Game and MaxInt;
-    if Round > BestRound then
-    begin
-      Result := Game shr 32;
-      BestRound := Round;
-    end;
-  end;
+  Result := WorstGame and MaxInt;
 end;
 
 {$ENDREGION}
