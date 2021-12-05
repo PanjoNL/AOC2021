@@ -40,6 +40,14 @@ type
     procedure BeforeSolve; override;
   end;
 
+  TAdventOfCodeDay5 = class(TAdventOfCode)
+  private
+    function SacnHydrothermalVents(Const UseDiagonalLines: Boolean): integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -274,6 +282,78 @@ begin
 end;
 
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay5'}
+function TAdventOfCodeDay5.SacnHydrothermalVents(const UseDiagonalLines: Boolean): integer;
+const MapSize: integer = 1000;
+var
+  Map: Array of integer;
+  IntersectionsCount: Integer;
+
+  function _GetCoordinates(Const s: string): TPoint;
+  var Split: TStringDynArray;
+  begin
+    Split := SplitString(s, ',');
+    Result := TPoint.Create(Split[0].ToInteger, Split[1].ToInteger);
+  end;
+
+  procedure _AddPointToMap(Const aX, aY: integer);
+  begin
+    if Map[aX*MapSize+aY] = 1 then
+      Inc(IntersectionsCount);
+
+    Map[aX*MapSize+aY] := Map[aX*MapSize+aY] + 1;
+  end;
+
+  function _GetNewValue(Const aStart, aStop, aCurrent: integer): integer;
+  begin
+    if aStart = aStop then
+      Result := aStart
+    else if aStart < aStop then
+      Result := aCurrent + 1
+    else
+      Result := aCurrent - 1;
+  end;
+
+var
+  Split: TStringDynArray;
+  StartCoordinates, StopCoordinates: TPoint;
+  s: string;
+  X,Y: integer;
+begin
+  SetLength(Map, MapSize*Mapsize);
+  IntersectionsCount := 0;
+  for s in FInput do
+  begin
+    Split := SplitString(s, ' ');
+    StartCoordinates := _GetCoordinates(Split[0]);
+    StopCoordinates := _GetCoordinates(Split[2]);
+
+    if (not UseDiagonalLines) and (StartCoordinates.X <> StopCoordinates.X) and (StartCoordinates.Y <> StopCoordinates.Y) then
+      Continue;
+
+    X := StartCoordinates.X;
+    Y := StartCoordinates.Y;
+    Repeat
+      _AddPointToMap(X,Y);
+      X := _GetNewValue(StartCoordinates.X, StopCoordinates.X, X);
+      Y := _GetNewValue(StartCoordinates.Y, StopCoordinates.Y, Y);
+    until (X = StopCoordinates.X) and (Y = StopCoordinates.Y);
+    _AddPointToMap(X,Y);
+  end;
+
+  Result := IntersectionsCount;
+end;
+
+function TAdventOfCodeDay5.SolveA: Variant;
+begin
+  Result := SacnHydrothermalVents(False);
+end;
+
+function TAdventOfCodeDay5.SolveB: Variant;
+begin
+  Result := SacnHydrothermalVents(True);
+end;
+{$ENDREGION}
 
 
 
@@ -290,6 +370,9 @@ begin
 end;
 
 function TAdventOfCodeDay.SolveA: Variant;
+var
+  s: string;
+  Split: TStringDynArray;
 begin
 
 end;
@@ -302,7 +385,9 @@ end;
 {$ENDREGION}
 
 initialization
-  RegisterClasses([TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4]);
+  RegisterClasses(
+    [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5]
+    );
 
 end.
 
