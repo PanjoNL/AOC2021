@@ -306,12 +306,7 @@ var
 
   function _GetNewValue(Const aStart, aStop, aCurrent: integer): integer;
   begin
-    if aStart = aStop then
-      Result := aStart
-    else if aStart < aStop then
-      Result := aCurrent + 1
-    else
-      Result := aCurrent - 1;
+    Result := aCurrent + Sign(aStop - aStart);
   end;
 
 var
