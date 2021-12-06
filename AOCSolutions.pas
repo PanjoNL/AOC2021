@@ -48,6 +48,14 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay6 = class(TAdventOfCode)
+  private
+    function SimulateLanternfish(Const Days: Integer): Int64;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -349,6 +357,39 @@ begin
   Result := SacnHydrothermalVents(True);
 end;
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay6'}
+function TAdventOfCodeDay6.SolveA: Variant;
+begin
+  Result := SimulateLanternfish(80);
+end;
+
+function TAdventOfCodeDay6.SolveB: Variant;
+begin
+  Result := SimulateLanternfish(256);
+end;
+
+function TAdventOfCodeDay6.SimulateLanternfish(Const Days: Integer): Int64;
+var
+  Fish: array of int64;
+  i: integer;
+begin
+  SetLength(Fish, Days);
+
+  Fish[0] := OccurrencesOfChar(FInput[0],',')+1;
+  for i := 1 to 5 do
+    Fish[i] := Fish[i-1] + OccurrencesOfChar(FInput[0],i.ToString);
+
+  Fish[6] := 2*Fish[0];
+  Fish[7] := 2*Fish[0];
+  Fish[8] := Fish[7] + Fish[1] - Fish[0];
+  Fish[9] := Fish[8] + Fish[2] - Fish[1];
+
+  for i := 10 to Days do
+    Fish[i] := Fish[i-1] - Fish[i-10] - Fish[i-8] + Fish[i-9] + Fish[i-7];
+
+  Result := Fish[Days-1];
+end;
+{$ENDREGION}
 
 
 
@@ -381,8 +422,8 @@ end;
 
 initialization
   RegisterClasses(
-    [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5]
-    );
+    [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
+     TAdventOfCodeDay6] );
 
 end.
 
