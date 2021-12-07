@@ -12,10 +12,12 @@ type
     btnSolve: TButton;
     cbb1: TComboBox;
     btnTest: TButton;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure btnSolveClick(Sender: TObject);
     procedure btnTestClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     FConfig: TAOCConfig;
   end;
@@ -24,6 +26,9 @@ var
   Form1: TForm1;
 
 implementation
+
+uses
+  uIntComputers;
 
 {$R *.dfm}
 
@@ -61,6 +66,27 @@ end;
 procedure TForm1.btnTestClick(Sender: TObject);
 begin
   AOCTests.RunTests(FConfig);
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  Input: TStringList;
+  Computer: TBasicIntComputer;
+  Msg: string;
+begin
+  msg := '';
+
+  Input := TStringList.Create;
+  Input.LoadFromFile(Format('%s/input/input7.txt', [FConfig.BaseFilePath]));
+
+  Computer := TBasicIntComputer.Create(Input[0]);
+  Computer.StopOnOutPut := True;
+  while not Computer.IsStopped do
+    msg := msg + chr(computer.Run);
+  ShowMessage(msg);
+
+  Computer.Free;
+  Input.Free;
 end;
 
 end.
