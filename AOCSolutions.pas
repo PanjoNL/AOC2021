@@ -56,6 +56,14 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay7 = class(TAdventOfCode)
+  private
+    function CalculateFuelCost(ExpensiveBurning: boolean): integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -390,6 +398,47 @@ begin
   Result := Fish[Days-1];
 end;
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay7'}
+function TAdventOfCodeDay7.SolveA: Variant;
+begin
+  Result := CalculateFuelCost(False);
+end;
+
+function TAdventOfCodeDay7.SolveB: Variant;
+begin
+  Result := CalculateFuelCost(True);
+end;
+
+function TAdventOfCodeDay7.CalculateFuelCost(ExpensiveBurning: boolean): integer;
+var
+  s: string;
+  Split: TStringDynArray;
+  BestFuelCost, currentFuelCost, StartPosition, Distance, Point: integer;
+begin
+  StartPosition := MaxInt;
+  split := SplitString(FInput[0], ',');
+  for s in split do
+    StartPosition := Min(StartPosition, s.ToInteger);
+
+  BestFuelCost := MaxInt;
+  repeat
+    currentFuelCost := 0;
+    for s in Split do
+    begin
+      Distance := abs(S.ToInteger - StartPosition);
+      if ExpensiveBurning then
+         inc(CurrentFuelCost, round(Distance * (Distance + 1) / 2))
+      else
+        inc(CurrentFuelCost, Distance);
+    end;
+      
+    BestFuelCost := Min(BestFuelCost, currentFuelCost);
+    Inc(StartPosition);
+  until (currentFuelCost > BestFuelCost);
+
+  Result := BestFuelCost;
+end;
+{$ENDREGION}
 
 
 
@@ -423,7 +472,7 @@ end;
 initialization
   RegisterClasses(
     [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-     TAdventOfCodeDay6] );
+     TAdventOfCodeDay6, TAdventOfCodeDay7] );
 
 end.
 
