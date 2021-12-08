@@ -467,95 +467,73 @@ end;
 function TAdventOfCodeDay8.SolveB: Variant;
 
   function CalculateDisplay(Const aCheck, aTotal: string): integer;
+  var KnownNumbers: Array[0..9] of Integer;
 
-    function toInt(aNumber: string): integer;
+    function DisplayNumberToInt(aNumber: string): integer;
     var i: integer;
     begin
       Result := 0;
       for i := ord('a') to ord('g') do
       begin
         Result := Result shl 1;
-        Result := Result + OccurrencesOfChar(aNumber, chr(i))
+        Result := Result + Sign(pos(chr(i), aNumber));
       end;
+    end;
+
+    function FindNumber(Const aNumber: string): integer;
+    var int, i: integer;
+    begin
+      Result := -1;
+      int := DisplayNumberToInt(aNumber);
+      for i := 0 to 9 do
+        if KnownNumbers[i] = int then
+          Exit(i);
     end;
 
   var
     Split: TStringDynArray;
-    s: string;
     Number, i: Integer;
-    UnKnownNumbers: TList<Integer>;
-    KnownNumbers: Array[0..9] of Integer;
-    LookupNumbers: TDictionary<integer, Integer>;
   begin
-    UnKnownNumbers := TList<Integer>.Create;
     split := SplitString(aCheck, ' ');
-    for i := 0 to 9 do
-      KnownNumbers[i] := 0;
-
-    for s in split do
-    begin
-      Number := toInt(s);
-      case CountTrueBits(number) of
-        2: KnownNumbers[1] := Number;
-        3: KnownNumbers[7] := Number;
-        4: KnownNumbers[4] := Number;
-        7: KnownNumbers[8] := Number;
-      else
-        UnKnownNumbers.Add(Number);
-      end;
-    end;
-
-    for i := 5 downto 0 do
-    begin
-      Number := UnKnownNumbers[i];
-      if CountTrueBits(number) = 6 then //Could still be 0,6,9
+    TArray.Sort<string>(Split, TDelegatedComparer<string>.Construct(
+      function(const Left, Right: string): Integer
       begin
-        if CountTrueBits(Number and KnownNumbers[4]) = 4 then
-        begin
-          KnownNumbers[9] := number;
-          UnKnownNumbers.Remove(Number);
-        end;
-      end
-      else // Could still be 2,3,5
+        Result := Sign(Length(Left)-Length(Right));
+      end));
+
+    KnownNumbers[1] := DisplayNumberToInt(Split[0]);
+    KnownNumbers[7] := DisplayNumberToInt(Split[1]);
+    KnownNumbers[4] := DisplayNumberToInt(Split[2]);
+    KnownNumbers[8] := DisplayNumberToInt(Split[9]);
+
+    for i := 3 to 8 do
+    begin
+      Number := DisplayNumberToInt(Split[i]);
+      if i <= 5 then // Could still be 2,3,5
       begin
         if CountTrueBits(KnownNumbers[1] and Number) = 2 then
-        begin
-          KnownNumbers[3] := number;
-          UnKnownNumbers.Remove(Number);
-        end;
-      end;
-    end;
-
-    for Number in UnKnownNumbers do
-    begin
-      if CountTrueBits(number) = 6 then //Could still be 0,6
-      begin
-        if CountTrueBits(KnownNumbers[1] and Number) = 2then
-          KnownNumbers[0] := number
-        else
-          KnownNumbers[6] := number
-      end
-      else // Could still be 2,5
-      begin
-        if CountTrueBits(KnownNumbers[9] and Number) = 5 then
+          KnownNumbers[3] := number
+        else if CountTrueBits(KnownNumbers[4] and Number) = 3 then
           KnownNumbers[5] := number
         else
           KnownNumbers[2] := number;
+      end
+      else //Could still be 0,6,9
+      begin
+        if CountTrueBits(Number and KnownNumbers[4]) = 4 then
+           KnownNumbers[9] := number
+        else if CountTrueBits(KnownNumbers[1] and Number) = 2then
+          KnownNumbers[0] := number
+        else
+          KnownNumbers[6] := number
       end;
     end;
 
-    LookupNumbers := TDictionary<Integer,Integer>.Create;
-    for i := 0 to 9 do
-      LookupNumbers.Add(KnownNumbers[i], i);
-
     split := SplitString(aTotal, ' ');
-    Result := 1000 * LookupNumbers[toInt(Split[0])];
-    Result := Result + 100 * LookupNumbers[toInt(Split[1])];
-    Result := Result + 10 * LookupNumbers[toInt(Split[2])];
-    Result := Result + 1 * LookupNumbers[toInt(Split[3])];
-
-    LookupNumbers.Free;
-    UnKnownNumbers.Free;
+    Result := 1000 * FindNumber(Split[0]);
+    Result := Result + 100 * FindNumber(Split[1]);
+    Result := Result + 10 * FindNumber(Split[2]);
+    Result := Result + 1 * FindNumber(Split[3]);
   end;
 
 var
