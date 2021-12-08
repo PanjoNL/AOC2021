@@ -38,6 +38,7 @@ type
 function GCD(Number1, Number2: int64): int64;
 function OccurrencesOfChar(const S: string; const C: string): integer;
 function BitStringToInt(Const aBit: string): integer;
+function CountTrueBits(aInt: integer): integer;
 
 Const
   MaxInt64: Int64 = 9223372036854775807;
@@ -240,6 +241,18 @@ begin
       raise Exception.CreateFmt('BitStringToInt encounterd: %s', [aBit[i]]);
     end;
   end;
+end;
+
+function CountTrueBits(aInt: integer): integer;
+begin
+  Result := 0;
+  while aInt > 0 do
+  begin
+    if Odd(aInt) then
+      inc(Result);
+    aInt := aInt shr 1;
+  end;
+
 end;
 
 

@@ -64,6 +64,12 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay8 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -413,7 +419,7 @@ function TAdventOfCodeDay7.CalculateFuelCost(ExpensiveBurning: boolean): integer
 var
   s: string;
   Split: TStringDynArray;
-  BestFuelCost, currentFuelCost, StartPosition, Distance, Point: integer;
+  BestFuelCost, currentFuelCost, StartPosition, Distance: integer;
 begin
   StartPosition := MaxInt;
   split := SplitString(FInput[0], ',');
@@ -439,7 +445,131 @@ begin
   Result := BestFuelCost;
 end;
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay8'}
+function TAdventOfCodeDay8.SolveA: Variant;
+var
+  s, d: string;
+  Split, display: TStringDynArray;
+begin
+  Result := 0;
+  for s in FInput do
+  begin
+    Split := SplitString(s, '|');
+    d := Trim(Split[1]);
+    display := SplitString(d, ' ');
+    for d in display do
+      case Length(d) of
+        2,3,4,7: inc(result);
+      end;
+  end;
+end;
 
+function TAdventOfCodeDay8.SolveB: Variant;
+
+  function CalculateDisplay(Const aCheck, aTotal: string): integer;
+
+    function toInt(aNumber: string): integer;
+    var i: integer;
+    begin
+      Result := 0;
+      for i := ord('a') to ord('g') do
+      begin
+        Result := Result shl 1;
+        Result := Result + OccurrencesOfChar(aNumber, chr(i))
+      end;
+    end;
+
+  var
+    Split: TStringDynArray;
+    s: string;
+    Number, i: Integer;
+    UnKnownNumbers: TList<Integer>;
+    KnownNumbers: Array[0..9] of Integer;
+    LookupNumbers: TDictionary<integer, Integer>;
+  begin
+    UnKnownNumbers := TList<Integer>.Create;
+    split := SplitString(aCheck, ' ');
+    for i := 0 to 9 do
+      KnownNumbers[i] := 0;
+
+    for s in split do
+    begin
+      Number := toInt(s);
+      case CountTrueBits(number) of
+        2: KnownNumbers[1] := Number;
+        3: KnownNumbers[7] := Number;
+        4: KnownNumbers[4] := Number;
+        7: KnownNumbers[8] := Number;
+      else
+        UnKnownNumbers.Add(Number);
+      end;
+    end;
+
+    for i := 5 downto 0 do
+    begin
+      Number := UnKnownNumbers[i];
+      if CountTrueBits(number) = 6 then //Could still be 0,6,9
+      begin
+        if CountTrueBits(Number and KnownNumbers[4]) = 4 then
+        begin
+          KnownNumbers[9] := number;
+          UnKnownNumbers.Remove(Number);
+        end;
+      end
+      else // Could still be 2,3,5
+      begin
+        if CountTrueBits(KnownNumbers[1] and Number) = 2 then
+        begin
+          KnownNumbers[3] := number;
+          UnKnownNumbers.Remove(Number);
+        end;
+      end;
+    end;
+
+    for Number in UnKnownNumbers do
+    begin
+      if CountTrueBits(number) = 6 then //Could still be 0,6
+      begin
+        if CountTrueBits(KnownNumbers[1] and Number) = 2then
+          KnownNumbers[0] := number
+        else
+          KnownNumbers[6] := number
+      end
+      else // Could still be 2,5
+      begin
+        if CountTrueBits(KnownNumbers[9] and Number) = 5 then
+          KnownNumbers[5] := number
+        else
+          KnownNumbers[2] := number;
+      end;
+    end;
+
+    LookupNumbers := TDictionary<Integer,Integer>.Create;
+    for i := 0 to 9 do
+      LookupNumbers.Add(KnownNumbers[i], i);
+
+    split := SplitString(aTotal, ' ');
+    Result := 1000 * LookupNumbers[toInt(Split[0])];
+    Result := Result + 100 * LookupNumbers[toInt(Split[1])];
+    Result := Result + 10 * LookupNumbers[toInt(Split[2])];
+    Result := Result + 1 * LookupNumbers[toInt(Split[3])];
+
+    LookupNumbers.Free;
+    UnKnownNumbers.Free;
+  end;
+
+var
+  s: string;
+  Split: TStringDynArray;
+begin
+  Result := 0;
+  for s in FInput do
+  begin
+    Split := SplitString(s, '|');
+    Result := Result + CalculateDisplay(Trim(Split[0]), Trim(Split[1]));
+  end;
+end;
+{$ENDREGION}
 
 
 {$Region 'Placeholder'}
@@ -458,6 +588,7 @@ function TAdventOfCodeDay.SolveA: Variant;
 var
   s: string;
   Split: TStringDynArray;
+  i: integer;
 begin
 
 end;
@@ -472,7 +603,7 @@ end;
 initialization
   RegisterClasses(
     [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-     TAdventOfCodeDay6, TAdventOfCodeDay7] );
+     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8 ]);
 
 end.
 
