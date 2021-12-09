@@ -70,6 +70,14 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay9 = class(TAdventOfCode)
+  private
+    function ExploreBasins(Const OnlyLowestPoints: boolean): integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -548,7 +556,102 @@ begin
   end;
 end;
 {$ENDREGION}
+{$Region 'TAdventOfCodeDay9'}
+function TAdventOfCodeDay9.SolveA: Variant;
+begin
+  Result := ExploreBasins(True);
+end;
 
+function TAdventOfCodeDay9.SolveB: Variant;
+begin
+  Result := ExploreBasins(False);
+end;
+
+function TAdventOfCodeDay9.ExploreBasins(const OnlyLowestPoints: boolean): integer;
+Const DeltaX: Array[0..3] of integer = (1,-1,0,0);
+      DeltaY: Array[0..3] of integer = (0,0,1,-1);
+var MapWidth, MapHeight: integer;
+
+  function _Valid(Const aX, aY: Integer): boolean;
+  begin
+    Result := (aX >= 0) and (aX <= MapWidth) and (aY > 0) and (aY <= MapHeight);
+  end;
+
+  procedure CalcBasinSize(Const aStartX, aStartY, CurrHeight: integer; Const BasinPoints: TList<Integer>);
+  var i, xCheck, yCheck, Height: integer;
+  begin
+    for i := 0 to 3 do
+    begin
+      xCheck := aStartX + DeltaX[i];
+      yCheck := aStartY + DeltaY[i];
+      if not _Valid(xCheck, yCheck) then
+        Continue;
+
+      if BasinPoints.Contains(xCheck*1000 + yCheck) then
+        Continue;
+
+      Height := StrToInt(FInput[xCheck][yCheck]);
+      if (Height <= CurrHeight) or (Height >= 9) then
+        Continue;
+
+      BasinPoints.Add(xCheck*1000+yCheck);
+      CalcBasinSize(xCheck, yCheck, Height, BasinPoints);
+    end;
+  end;
+
+var
+  x, y, xCheck, yCheck, Height, i: Integer;
+  BasinPoints, Basins: TList<Integer>;
+  IsLowestPoint: Boolean;
+begin
+  Result := 0;
+
+  BasinPoints := TList<integer>.Create;
+  Basins := TList<Integer>.Create;
+
+  MapWidth := FInput.Count-1;
+  MapHeight := Length(FInput[0]);
+
+  for x := 0 to MapWidth do
+    for y := 1 to MapHeight do
+    begin
+      Height := StrToInt(FInput[x][y]);
+      IsLowestPoint := True;
+      for i := 0 to 3 do
+      begin
+        yCheck := y + DeltaY[i];
+        xCheck := x + DeltaX[i];
+        if not _Valid(xcheck, yCheck) then
+          Continue;
+
+        IsLowestPoint := IsLowestPoint and (Height < StrToInt(FInput[xCheck][yCheck]))
+      end;
+
+      if Not IsLowestPoint then
+        Continue;
+
+      if OnlyLowestPoints then
+        Inc(Result, Height + 1)
+      else
+      begin
+        BasinPoints.Clear;
+        BasinPoints.Add(x*1000+Y);
+        CalcBasinSize(x,y, Height, BasinPoints);
+        Basins.Add(BasinPoints.Count);
+      end;
+    end;
+
+  if not OnlyLowestPoints then
+  begin
+    Basins.Sort;
+    Basins.Reverse;
+    Result := Basins[0] * Basins[1] * Basins[2];
+  end;
+
+  BasinPoints.Free;
+  Basins.Free;
+end;
+{$ENDREGION}
 
 {$Region 'Placeholder'}
 (*
@@ -581,7 +684,7 @@ end;
 initialization
   RegisterClasses(
     [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8 ]);
+     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9 ]);
 
 end.
 
