@@ -436,30 +436,40 @@ function TAdventOfCodeDay7.CalculateFuelCost(ExpensiveBurning: boolean): integer
 var
   s: string;
   Split: TStringDynArray;
-  BestFuelCost, currentFuelCost, StartPosition, Distance: integer;
+  BestFuelCost, Count, position, currentFuelCost, StartPosition, Distance: integer;
+  Positions: TDictionary<integer, integer>;
+  PositionPair: TPair<integer, integer>;
 begin
+  Positions := TDictionary<integer, integer>.Create(TAOCIntComperer.Create);
   StartPosition := MaxInt;
   split := SplitString(FInput[0], ',');
   for s in split do
-    StartPosition := Min(StartPosition, s.ToInteger);
+  begin
+    position := s.ToInteger;
+    StartPosition := Min(StartPosition, position);
+    positions.TryGetValue(position, Count);
+    Inc(Count);
+    positions.AddOrSetValue(position, count)
+  end;
 
   BestFuelCost := MaxInt;
   repeat
     currentFuelCost := 0;
-    for s in Split do
+    for PositionPair in Positions do
     begin
-      Distance := abs(S.ToInteger - StartPosition);
+      Distance := abs(PositionPair.key - StartPosition);
       if ExpensiveBurning then
-         inc(CurrentFuelCost, round(Distance * (Distance + 1) / 2))
+         inc(CurrentFuelCost, PositionPair.Value * Round(Distance * (Distance + 1) / 2))
       else
-        inc(CurrentFuelCost, Distance);
+        inc(CurrentFuelCost, PositionPair.Value * Distance);
     end;
-      
+
     BestFuelCost := Min(BestFuelCost, currentFuelCost);
     Inc(StartPosition);
   until (currentFuelCost > BestFuelCost);
 
   Result := BestFuelCost;
+  Positions.Free;
 end;
 {$ENDREGION}
 {$Region 'TAdventOfCodeDay8'}
@@ -661,11 +671,14 @@ begin
   Basins.Free;
 end;
 {$ENDREGION}
-{$Region 'Placeholder'}
+{$Region 'TAdventOfCodeDay10'}
 procedure TAdventOfCodeDay10.BeforeSolve;
+Const open: Array[0..3] of string = ('(', '[', '{', '<');
+      close:Array[0..3] of string = (')', ']', '}', '>');
+      syntaxCost:Array[0..3] of integer = (3, 57, 1197, 25137);
 var
-  s, Current, Expected: string;
-  i : integer;
+  s, Current: string;
+  i, index: integer;
   Stack: TStack<string>;
   AutoCompleteScores: TList<Int64> ;
 begin
@@ -680,27 +693,14 @@ begin
     for i := 1 to Length(s) do
     begin
       Current := s[i];
-      case IndexStr(Current, ['(', '[', '{', '<']) of
-        0: Stack.Push(')');
-        1: Stack.Push(']');
-        2: Stack.Push('}');
-        3: Stack.Push('>');
-      else
-        begin
-          Expected := Stack.Pop;
-          if Expected <> current then
-          begin
-            case IndexStr(Current, [')', ']', '}', '>']) of
-              0:inc(SyntaxScore, 3);
-              1:inc(SyntaxScore, 57);
-              2:inc(SyntaxScore, 1197);
-              3:inc(SyntaxScore, 25137);
-            end;
-
-            Stack.Clear;
-            Break;
-          end;
-        end;
+      index := IndexStr(Current, open);
+      if index >= 0 then
+        Stack.Push(close[index])
+      else if Stack.Pop <> current then
+      begin
+        inc(SyntaxScore, syntaxCost[indexStr(Current, Close)]);
+        Stack.Clear;
+        Break;
       end;
     end;
 
@@ -708,16 +708,8 @@ begin
     begin
       AutoCompleteScore := 0;
       while Stack.Count > 0 do
-      begin
-        Expected := Stack.Pop;
-        AutoCompleteScore := AutoCompleteScore * 5;
-        case IndexStr(Expected, [')', ']', '}', '>']) of
-          0:inc(AutoCompleteScore, 1);
-          1:inc(AutoCompleteScore, 2);
-          2:inc(AutoCompleteScore, 3);
-          3:inc(AutoCompleteScore, 4);
-        end;
-      end;
+        AutoCompleteScore := AutoCompleteScore * 5 + 1 + IndexStr(Stack.Pop, Close);
+
       AutoCompleteScores.Add(AutoCompleteScore);
     end;
   end;
