@@ -78,6 +78,15 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay10 = class(TAdventOfCode)
+  private
+    SyntaxScore, AutoCompleteScore: int64;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+  end;
+
 {$REGION 'placeholder'}
 (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -652,6 +661,84 @@ begin
   Basins.Free;
 end;
 {$ENDREGION}
+{$Region 'Placeholder'}
+procedure TAdventOfCodeDay10.BeforeSolve;
+var
+  s, Current, Expected: string;
+  i : integer;
+  Stack: TStack<string>;
+  AutoCompleteScores: TList<Int64> ;
+begin
+  SyntaxScore := 0;
+
+  Stack := TStack<string>.Create;
+  AutoCompleteScores := TList<Int64>.Create;
+
+  for s in FInput do
+  begin
+    Stack.Clear;
+    for i := 1 to Length(s) do
+    begin
+      Current := s[i];
+      case IndexStr(Current, ['(', '[', '{', '<']) of
+        0: Stack.Push(')');
+        1: Stack.Push(']');
+        2: Stack.Push('}');
+        3: Stack.Push('>');
+      else
+        begin
+          Expected := Stack.Pop;
+          if Expected <> current then
+          begin
+            case IndexStr(Current, [')', ']', '}', '>']) of
+              0:inc(SyntaxScore, 3);
+              1:inc(SyntaxScore, 57);
+              2:inc(SyntaxScore, 1197);
+              3:inc(SyntaxScore, 25137);
+            end;
+
+            Stack.Clear;
+            Break;
+          end;
+        end;
+      end;
+    end;
+
+    if Stack.Count > 0 then
+    begin
+      AutoCompleteScore := 0;
+      while Stack.Count > 0 do
+      begin
+        Expected := Stack.Pop;
+        AutoCompleteScore := AutoCompleteScore * 5;
+        case IndexStr(Expected, [')', ']', '}', '>']) of
+          0:inc(AutoCompleteScore, 1);
+          1:inc(AutoCompleteScore, 2);
+          2:inc(AutoCompleteScore, 3);
+          3:inc(AutoCompleteScore, 4);
+        end;
+      end;
+      AutoCompleteScores.Add(AutoCompleteScore);
+    end;
+  end;
+
+  AutoCompleteScores.Sort;
+  AutoCompleteScore := AutoCompleteScores[Trunc(AutoCompleteScores.Count/2)];
+
+  AutoCompleteScores.Free;
+  Stack.Free;
+end;
+
+function TAdventOfCodeDay10.SolveA: Variant;
+begin
+  Result := SyntaxScore;
+end;
+
+function TAdventOfCodeDay10.SolveB: Variant;
+begin
+  Result := AutoCompleteScore;
+end;
+{$ENDREGION}
 
 {$Region 'Placeholder'}
 (*
@@ -684,7 +771,7 @@ end;
 initialization
   RegisterClasses(
     [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9 ]);
+     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10 ]);
 
 end.
 
