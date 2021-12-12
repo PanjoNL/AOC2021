@@ -87,19 +87,36 @@ type
     procedure BeforeSolve; override;
   end;
 
-{$REGION 'placeholder'}
-(*
-  TAdventOfCodeDay = class(TAdventOfCode)
+  TAdventOfCodeDay11 = class(TAdventOfCode)
+  private
+    function ObserveOctopuses(WaitForSync: Boolean): integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
+  TAdventOfCodeDay12 = class(TAdventOfCode)
+  private
+    Connections: TDictionary<String, TList<string>>;
+    function ExploreCaves(Const CanUseLowercaseCaveTwice: boolean): integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
     procedure AfterSolve; override;
   end;
-*)
+
+{$REGION 'placeholder'}
+  (*
+    TAdventOfCodeDay = class(TAdventOfCode)
+    protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+    procedure AfterSolve; override;
+    end;
+  *)
 {$ENDREGION}
-
-
 
 implementation
 
@@ -440,7 +457,7 @@ var
   Positions: TDictionary<integer, integer>;
   PositionPair: TPair<integer, integer>;
 begin
-  Positions := TDictionary<integer, integer>.Create(TAOCIntComperer.Create);
+  Positions := TDictionary<integer, integer>.Create();
   StartPosition := MaxInt;
   split := SplitString(FInput[0], ',');
   for s in split do
@@ -731,39 +748,199 @@ begin
   Result := AutoCompleteScore;
 end;
 {$ENDREGION}
-
-{$Region 'Placeholder'}
-(*
-procedure TAdventOfCodeDay.BeforeSolve;
+{$REGION 'TAdventOfCodeDay11'}
+function TAdventOfCodeDay11.SolveA: Variant;
 begin
-
+  Result := ObserveOctopuses(False)
 end;
 
-procedure TAdventOfCodeDay.AfterSolve;
+function TAdventOfCodeDay11.SolveB: Variant;
 begin
-
+  Result := ObserveOctopuses(True);
 end;
 
-function TAdventOfCodeDay.SolveA: Variant;
+function TAdventOfCodeDay11.ObserveOctopuses(WaitForSync: Boolean): integer;
+const
+  DeltaX: array [0..7] of integer = (1, 1, 1, 0, 0, -1, -1, -1);
+  DeltaY: array [0..7] of integer = (1, 0, -1, -1, 1, 1, 0, -1);
 var
+  i, j, x, y, Count: integer;
+  Point, NewPoint: TPoint;
+  Octopuses: TDictionary<TPoint, integer>;
+  Flashed: TList<TPoint>;
+  FlashFound: Boolean;
+begin
+  Octopuses := TDictionary<TPoint, integer>.Create;
+  Flashed := TList<TPoint>.Create;
+  try
+    for x := 0 to 9 do
+      for y := 1 to 10 do
+        Octopuses.Add(TPoint.Create(x, y), StrToInt(FInput[x][y]));
+
+    Result := 0;
+    i := 1;
+    while (i <= 100) or WaitForSync do
+    begin
+      for point in Octopuses.Keys do
+        Octopuses[Point] := Octopuses[point] + 1;
+
+    Flashed.Clear;
+    FlashFound := True;
+    while FlashFound do
+    begin
+      FlashFound := False;
+      for point in Octopuses.Keys do
+        if (Octopuses[point] > 9) and not Flashed.Contains(point) then
+        begin
+          FlashFound := True;
+          Inc(Result);
+          Flashed.Add(point);
+
+          for j := 0 to 7 do
+          begin
+            NewPoint := TPoint.Create(Point);
+            NewPoint.Offset(DeltaX[j], DeltaY[j]);
+            if Octopuses.TryGetValue(NewPoint, Count) then
+              Octopuses[NewPoint] := Count + 1;
+          end;
+        end;
+    end;
+
+    if Flashed.Count = 100 then
+      Exit(i);
+
+    for point in Flashed do
+      Octopuses[point] := 0;
+
+    inc(i);
+  end;
+  finally
+    Octopuses.Free;
+    Flashed.Free;
+  end;
+end;
+{$ENDREGION}
+{$REGION 'TAdventOfCodeDay12'}
+procedure TAdventOfCodeDay12.BeforeSolve;
+
+  procedure Add(Start, stop: string);
+  var lst: TList<string>;
+  begin
+    if not Connections.TryGetValue(Start, lst) then
+    begin
+      lst := TList<String>.create;
+      Connections.Add(Start, lst);
+    end;
+
+    lst.Add(stop);
+  end;
+
+var
+  split: TStringDynArray;
+  s: string;
+begin
+  Connections := TDictionary<String, TList<string>>.Create;
+
+  for s in FInput do
+  begin
+    Split := SplitString(s, '-');
+    Add(Split[0], Split[1]);
+    Add(Split[1], Split[0]);
+  end;
+end;
+
+procedure TAdventOfCodeDay12.AfterSolve;
+var lst: TList<string>;
+begin
+  for lst in Connections.Values do
+    lst.Free;
+  Connections.Free;
+end;
+
+function TAdventOfCodeDay12.SolveA: Variant;
+begin
+  Result := ExploreCaves(False);
+end;
+
+function TAdventOfCodeDay12.SolveB: Variant;
+begin
+  Result := ExploreCaves(True);
+end;
+
+function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice: boolean): integer;
+
+  procedure _ExploreCaves(const CurrentCave, CurrentRoute: string; aLowercaseCaveUsedTwice: boolean);
+  var
+    newnode: string;
+    LowercaseCaveUsedTwice: boolean;
+  begin
+    for newNode in Connections[CurrentCave] do
+    begin
+      if SameText(newnode, 'start') then
+        continue;
+
+      if SameText(newnode, 'end') then
+      begin
+        Inc(Result);
+        continue;
+      end;
+
+      LowercaseCaveUsedTwice := aLowercaseCaveUsedTwice;
+      if SameStr(newnode, LowerCase(NewNode)) then // Check for lowercase
+      begin
+        if (Pos(newNode, CurrentRoute) > 0) then // Check if cave is in route
+        begin
+          if (not LowercaseCaveUsedTwice) then // Check if a lowercasecave has been visted twice
+            LowercaseCaveUsedTwice := true
+          else
+            continue;
+        end
+      end;
+
+      _ExploreCaves(NewNode, currentroute+'-'+newnode, LowercaseCaveUsedTwice);
+    end;
+  end;
+
+begin
+  Result := 0;
+  _ExploreCaves('start', 'start', not CanUseLowercaseCaveTwice);
+end;
+{$ENDREGION}
+
+
+{$REGION 'Placeholder'}
+(*
+  procedure TAdventOfCodeDay.BeforeSolve;
+  begin
+
+  end;
+
+  procedure TAdventOfCodeDay.AfterSolve;
+  begin
+
+  end;
+
+  function TAdventOfCodeDay.SolveA: Variant;
+  var
   s: string;
   Split: TStringDynArray;
   i: integer;
-begin
+  begin
 
-end;
+  end;
 
-function TAdventOfCodeDay.SolveB: Variant;
-begin
+  function TAdventOfCodeDay.SolveB: Variant;
+  begin
 
-end;
+  end;
 *)
 {$ENDREGION}
 
 initialization
-  RegisterClasses(
-    [TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10 ]);
+
+RegisterClasses([
+    TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
+    TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
+    TAdventOfCodeDay11,TAdventOfCodeDay12]);
 
 end.
-
