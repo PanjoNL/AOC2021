@@ -95,9 +95,18 @@ type
     function SolveB: Variant; override;
   end;
 
+  TCave = class
+  public
+    ConnectedCaves: TList<TCave>;
+    IsStartCave, IsEndCave, IsLowercase: boolean;
+    CaveId: Integer;
+    constructor Create(const aCaveName: string; aCaveId: integer);
+    destructor Destroy; override;
+  end;
+
   TAdventOfCodeDay12 = class(TAdventOfCode)
   private
-    Connections: TDictionary<String, TList<string>>;
+    Caves: TDictionary<string, TCave>;
     function ExploreCaves(Const CanUseLowercaseCaveTwice: boolean): integer;
   protected
     function SolveA: Variant; override;
@@ -820,41 +829,60 @@ begin
   end;
 end;
 {$ENDREGION}
+{$REGION 'TCave'}
+constructor TCave.Create(const aCaveName: string; aCaveId: integer);
+begin
+  IsStartCave := SameText(aCaveName, 'start');
+  IsEndCave := SameText(aCaveName, 'end');
+  IsLowercase := SameStr(aCaveName, LowerCase(aCaveName));
+
+  CaveId := aCaveId;
+
+  ConnectedCaves := TList<TCave>.Create;
+end;
+
+destructor TCave.Destroy;
+begin
+  ConnectedCaves.Free;
+end;
+{$ENDREGION}
 {$REGION 'TAdventOfCodeDay12'}
 procedure TAdventOfCodeDay12.BeforeSolve;
 
-  procedure Add(Start, stop: string);
-  var lst: TList<string>;
+  function _Cave(Const aCaveName: String): TCave;
   begin
-    if not Connections.TryGetValue(Start, lst) then
+    if not Caves.TryGetValue(aCaveName, Result) then
     begin
-      lst := TList<String>.create;
-      Connections.Add(Start, lst);
+      Result := TCave.Create(aCaveName, Caves.Count);
+      Caves.Add(aCaveName, Result);
     end;
-
-    lst.Add(stop);
   end;
 
 var
   split: TStringDynArray;
   s: string;
+  Cave1, Cave2: TCave;
 begin
-  Connections := TDictionary<String, TList<string>>.Create;
+  Caves := TDictionary<string, TCave>.Create;
 
   for s in FInput do
   begin
     Split := SplitString(s, '-');
-    Add(Split[0], Split[1]);
-    Add(Split[1], Split[0]);
+
+    Cave1 := _Cave(Split[0]);
+    Cave2 := _Cave(Split[1]);
+
+    Cave1.ConnectedCaves.Add(Cave2);
+    Cave2.ConnectedCaves.Add(Cave1);
   end;
 end;
 
 procedure TAdventOfCodeDay12.AfterSolve;
-var lst: TList<string>;
+var Cave: TCave;
 begin
-  for lst in Connections.Values do
-    lst.Free;
-  Connections.Free;
+  for Cave in Caves.Values do
+    Cave.Free;
+  Caves.Free;
 end;
 
 function TAdventOfCodeDay12.SolveA: Variant;
@@ -867,43 +895,43 @@ begin
   Result := ExploreCaves(True);
 end;
 
+type TByteSet = set of byte;
 function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice: boolean): integer;
 
-  procedure _ExploreCaves(const CurrentCave, CurrentRoute: string; aLowercaseCaveUsedTwice: boolean);
-  var
-    newnode: string;
-    LowercaseCaveUsedTwice: boolean;
+  procedure _ExploreCaves(Const aCurrentCave: TCave; aVisitedLowerCaseCaves: TByteSet ; aLowercaseCaveUsedTwice: Boolean);
+  var OtherCave: TCave;
+      LowercaseCaveUsedTwice: boolean;
+      VisitedLowerCaseCaves: TByteSet;
   begin
-    for newNode in Connections[CurrentCave] do
+    for OtherCave in aCurrentCave.ConnectedCaves do
     begin
-      if SameText(newnode, 'start') then
-        continue;
-
-      if SameText(newnode, 'end') then
-      begin
+      if OtherCave.IsEndCave then
         Inc(Result);
-        continue;
-      end;
+
+      if OtherCave.IsStartCave or OtherCave.IsEndCave then
+        Continue;
 
       LowercaseCaveUsedTwice := aLowercaseCaveUsedTwice;
-      if SameStr(newnode, LowerCase(NewNode)) then // Check for lowercase
+      VisitedLowerCaseCaves := aVisitedLowerCaseCaves;
+      if OtherCave.IsLowercase then
       begin
-        if (Pos(newNode, CurrentRoute) > 0) then // Check if cave is in route
+        if OtherCave.CaveId in VisitedLowerCaseCaves then
         begin
-          if (not LowercaseCaveUsedTwice) then // Check if a lowercasecave has been visted twice
-            LowercaseCaveUsedTwice := true
-          else
-            continue;
-        end
+          if LowercaseCaveUsedTwice then
+            Continue;
+
+          LowercaseCaveUsedTwice := true;
+        end;
+        Include(VisitedLowerCaseCaves, OtherCave.CaveId);
       end;
 
-      _ExploreCaves(NewNode, currentroute+'-'+newnode, LowercaseCaveUsedTwice);
+      _ExploreCaves(OtherCave, VisitedLowerCaseCaves, LowercaseCaveUsedTwice);
     end;
   end;
 
 begin
   Result := 0;
-  _ExploreCaves('start', 'start', not CanUseLowercaseCaveTwice);
+  _ExploreCaves(caves['start'], [], not CanUseLowercaseCaveTwice);
 end;
 {$ENDREGION}
 
