@@ -24,7 +24,7 @@ type TAdventOfCode = class(TPersistent)
   private
     FConfig: TAocConfig;
     function InputFilePath: string;
-    function MakeFilePath(const aFileName: String): string;
+    function MakeFilePath(const aFolder, aFileName: String): string;
     function DayIndex: String;
     procedure DoProcedure(ProcedureToRun: TProcedureToRun; const aDisplayName: String);
     function DoFunction(FuntionToRun: TFunctionToRun; const aDisplayName: string; Out MicroSecondsTaken: Int64): String;
@@ -63,17 +63,17 @@ end;
 
 function TAdventOfCode.SaveFilePath: String;
 begin
-  Result := MakeFilePath('Solution');
+  Result := MakeFilePath('Input', 'Solution');
 end;
 
 function TAdventOfCode.InputFilePath: string;
 begin
-  Result := MakeFilePath('Input')
+  Result := MakeFilePath('Input', 'Input')
 end;
 
-function TAdventOfCode.MakeFilePath(const aFileName: String): string;
+function TAdventOfCode.MakeFilePath(const aFolder, aFileName: String): string;
 begin
-  result := Format('%s\%s\%s%s.txt', [FConfig.BaseFilePath, aFileName, aFileName, DayIndex])
+  result := Format('%s\%s\%s%s.txt', [FConfig.BaseFilePath, aFolder, aFileName, DayIndex])
 end;
 
 function TAdventOfCode.SolveA: Variant;

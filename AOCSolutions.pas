@@ -115,15 +115,23 @@ type
     procedure AfterSolve; override;
   end;
 
+  TAdventOfCodeDay13 = class(TAdventOfCode)
+  private
+    function FoldPaper(Const OnlyOnce: Boolean): Variant;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
-    TAdventOfCodeDay = class(TAdventOfCode)
-    protected
+  TAdventOfCodeDay = class(TAdventOfCode)
+  protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
     procedure AfterSolve; override;
-    end;
+  end;
   *)
 {$ENDREGION}
 
@@ -934,33 +942,141 @@ begin
   _ExploreCaves(caves['start'], [], not CanUseLowercaseCaveTwice);
 end;
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay13'}
+function TAdventOfCodeDay13.SolveA: Variant;
+begin
+  Result := FoldPaper(True);
+end;
+
+function TAdventOfCodeDay13.SolveB: Variant;
+begin
+  Result := FoldPaper(false)
+end;
+
+function TAdventOfCodeDay13.FoldPaper(const OnlyOnce: Boolean): variant;
+var
+  Points: TList<TPoint>;
+  MaxX, MaxY: integer;
+  
+  function SaveToFile: string;
+  var s: string;
+      x,y: integer;
+      lst: TStringList;
+  begin
+    Result := SaveFilePath;
+    lst := TStringList.Create;
+    for y := 0 to MaxY do
+    begin
+      s := '';
+      for x := 0 to MaxX do
+        if Points.Contains(TPoint.Create(x,y)) then
+          s := s + '#'
+        else
+          s := s + '.';
+      lst.Add(s);
+    end;
+    lst.SaveToFile(Result);
+    lst.Free;
+  end;
+
+  function Vold(Const CurrentValue, FoldLine: integer): integer;
+  begin
+    Result := CurrentValue;
+    if CurrentValue > FoldLine then
+      Result := 2*FoldLine - CurrentValue;;
+  end;
+  
+var 
+  s: string;
+  Split: TStringDynArray;
+  i, j: integer;
+  FoldLine, x, y: integer;  
+  FoldOnX: Boolean;
+  Point, NewPoint: TPoint;
+
+begin
+  Points := TList<TPoint>.Create;
+  try
+    MaxX := 0;
+    MaxY := 0;
+    for i := 0 to FInput.Count -1 do
+    begin
+      s := Trim(FInput[i]);
+      if s = '' then
+        break;
+
+      Split := SplitString(s, ',');
+      x := Split[0].ToInteger;
+      y := Split[1].ToInteger;
+
+      Points.Add(TPoint.Create(x,y));
+      MaxX := Max(MaxX, X);
+      MaxY := Max(MaxY, Y);
+    end;
+
+    while i < FInput.Count -1 do
+    begin
+      inc(i);
+      s := FInput[i];
+      Split := SplitString(s, '=');
+      FoldOnX := Split[0].EndsWith('x');
+      FoldLine := Split[1].ToInteger;
+
+      for j := Points.Count-1 downto 0 do
+      begin
+        Point := Points.ExtractAt(j);
+        if FoldOnX then
+          Point.X := Vold(Point.X, FoldLine)
+        else
+          Point.Y := Vold(Point.Y, FoldLine);
+
+        if not Points.Contains(Point) then
+          Points.Add(Point);
+      end;
+
+      if FoldOnX then
+        MaxX := MaxX Shr 1
+      else
+        Maxy := MaxY Shr 1;
+
+      if OnlyOnce then
+        Exit(Points.Count)
+    end;
+
+    Result := Format('Solution saved in: %s', [SaveToFile]);  
+  finally
+    points.Free;
+  end;
+end;
+
+{$ENDREGION}
 
 
 {$REGION 'Placeholder'}
 (*
-  procedure TAdventOfCodeDay.BeforeSolve;
-  begin
+procedure TAdventOfCodeDay.BeforeSolve;
+begin
 
-  end;
+end;
 
-  procedure TAdventOfCodeDay.AfterSolve;
-  begin
+procedure TAdventOfCodeDay.AfterSolve;
+begin
 
-  end;
+end;
 
-  function TAdventOfCodeDay.SolveA: Variant;
-  var
-  s: string;
-  Split: TStringDynArray;
-  i: integer;
-  begin
+function TAdventOfCodeDay.SolveA: Variant;
+var
+s: string;
+Split: TStringDynArray;
+i: integer;
+begin
 
-  end;
+end;
 
-  function TAdventOfCodeDay.SolveB: Variant;
-  begin
+function TAdventOfCodeDay.SolveB: Variant;
+begin
 
-  end;
+end;
 *)
 {$ENDREGION}
 
@@ -969,6 +1085,6 @@ initialization
 RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
-    TAdventOfCodeDay11,TAdventOfCodeDay12]);
+    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13]);
 
 end.
