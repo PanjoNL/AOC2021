@@ -123,6 +123,17 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay14 = class(TAdventOfCode)
+  private
+    Rules: TDictionary<string, string>;
+    function BuildPolymer(Const aRounds: integer): int64;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+    procedure AfterSolve; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -439,7 +450,6 @@ var
   i: integer;
 begin
   SetLength(Fish, Days);
-
   Fish[0] := OccurrencesOfChar(FInput[0],',')+1;
   for i := 1 to 5 do
     Fish[i] := Fish[i-1] + OccurrencesOfChar(FInput[0],i.ToString);
@@ -993,7 +1003,6 @@ var
   FoldLine, x, y: integer;  
   FoldOnX: Boolean;
   Point, NewPoint: TPoint;
-
 begin
   Points := TList<TPoint>.Create;
   try
@@ -1050,7 +1059,84 @@ begin
 end;
 
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay14'}
+procedure TAdventOfCodeDay14.BeforeSolve;
+var
+  Split: TStringDynArray;
+  i: integer;
+begin
+  Rules := TDictionary<String, string>.Create;
+  for i := 2 to FInput.Count-1 do
+  begin
+    Split := SplitString(FInput[i], ' ');
+    Rules.Add(Split[0], Split[2]);
+  end;
+end;
 
+procedure TAdventOfCodeDay14.AfterSolve;
+begin
+  Rules.Free;
+end;
+
+function TAdventOfCodeDay14.SolveA: Variant;
+begin
+  Result := BuildPolymer(10);
+end;
+
+function TAdventOfCodeDay14.SolveB: Variant;
+begin
+  Result := BuildPolymer(40);
+end;
+
+function TAdventOfCodeDay14.BuildPolymer(const aRounds: integer): int64;
+
+  procedure AddToDict(aDict: TDictionary<string, int64>; Const aKey: string; aValue: int64);
+  var Val: int64;
+  begin
+    aDict.TryGetValue(aKey, Val);
+    aDict.AddOrSetValue(aKey, Val + aValue);
+  end;
+
+var
+  Middle: string;
+  i: int64;
+  Values: TArray<int64>;
+  Counts, PolymerParts, NewPolymerParts: TDictionary<string, int64>;
+  PolymerPair: TPair<string, int64>;
+begin
+  PolymerParts := Tdictionary<string, int64>.Create;
+  for i := 1 to Length(FInput[0])-1 do
+    AddToDict(PolymerParts, FInput[0][i] + FInput[0][i+1], 1);
+
+  for i := 1 to aRounds do
+  begin
+    NewPolymerParts := Tdictionary<string, int64>.Create;
+    for PolymerPair in PolymerParts do
+    begin
+      Middle := Rules[PolymerPair.Key];
+
+      AddToDict(NewPolymerParts, PolymerPair.Key[1] + Middle, PolymerPair.Value);
+      AddToDict(NewPolymerParts, Middle + PolymerPair.Key[2], PolymerPair.Value);
+    end;
+
+    PolymerParts.Free;
+    PolymerParts := NewPolymerParts;
+  end;
+
+  Counts := TDictionary<string, int64>.create;
+  Counts.Add(FInput[0][1], 1);
+  for PolymerPair in PolymerParts do
+    AddToDict(Counts, PolymerPair.Key[2], PolymerPair.Value);
+
+  Values := Counts.Values.ToArray;
+  TArray.Sort<int64>(Values);
+  Result := Values[Counts.Count-1] - Values[0];
+
+  PolymerParts.Free;
+  Counts.Free;
+end;
+
+{$ENDREGION}
 
 {$REGION 'Placeholder'}
 (*
@@ -1066,9 +1152,9 @@ end;
 
 function TAdventOfCodeDay.SolveA: Variant;
 var
-s: string;
-Split: TStringDynArray;
-i: integer;
+  s: string;
+  Split: TStringDynArray;
+  i: integer;
 begin
 
 end;
@@ -1085,6 +1171,6 @@ initialization
 RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
-    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13]);
+    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14]);
 
 end.
