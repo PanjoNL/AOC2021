@@ -8,7 +8,9 @@ uses
   uAOCUtils in 'uAOCUtils.pas',
   uAOCTests in 'uAOCTests.pas',
   uAocConfig in 'uAocConfig.pas',
-  uIntComputers in 'uIntComputers.pas';
+  uIntComputers in 'uIntComputers.pas',
+  PriorityQueues in 'PriorityQueue\PriorityQueues.pas',
+  PriorityQueues.Detail in 'PriorityQueue\PriorityQueues.Detail.pas';
 
 begin
   Application.Initialize;

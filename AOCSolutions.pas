@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Generics.Defaults, System.Generics.Collections,
   system.Diagnostics, AOCBase, RegularExpressions, System.DateUtils, system.StrUtils,
-  system.Math, uAOCUtils, system.Types;
+  system.Math, uAOCUtils, system.Types, PriorityQueues;
 
 type
   TAdventOfCodeDay1 = class(TAdventOfCode)
@@ -132,6 +132,13 @@ type
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
     procedure AfterSolve; override;
+  end;
+
+  TAdventOfCodeDay15 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    function CheckCavern(Const MapSizeMultiplier: integer): integer;
   end;
 
 {$REGION 'placeholder'}
@@ -1137,6 +1144,99 @@ begin
 end;
 
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay15'}
+function TAdventOfCodeDay15.SolveA: Variant;
+begin
+  Result := CheckCavern(1);
+end;
+
+function TAdventOfCodeDay15.SolveB: Variant;
+begin
+  Result := CheckCavern(5);
+end;
+
+type RCavernWork = record x,y,Risk: integer; end;
+function TAdventOfCodeDay15.CheckCavern(const MapSizeMultiplier: integer): integer;
+Const DeltaX: Array[0..3] of integer = (1,0,-1,0);
+      DeltaY: Array[0..3] of integer = (0,1,0,-1);
+var
+  risk, xExtra, yExtra, BaseRisk, i, x, y, MaxX, MaxY: integer;
+  Risks, Checked: Array of Array of integer;
+  Work, NewWork: RCavernWork;
+  Comparer: IComparer<RCavernWork>;
+  Queue: PriorityQueue<RCavernWork>;
+begin
+  Result := -1;
+  Comparer := TComparer<RCavernWork>.Construct
+    (function(const Left, Right: RCavernWork): Integer
+    begin
+      Result := Sign(Left.Risk - Right.Risk);
+    end);
+
+  Queue := PriorityQueue<RCavernWork>.Create(Comparer, Comparer);
+
+  MaxX := Length(FInput[0]) -1;
+  MaxY := FInput.Count -1;
+
+  SetLength(Risks, MapSizeMultiplier * MaxX+MapSizeMultiplier);
+  SetLength(Checked, MapSizeMultiplier * MaxX + MapSizeMultiplier);
+  for x := 0 to MapSizeMultiplier * MaxX + MapSizeMultiplier -1 do
+  begin
+    SetLength(Risks[x], MapSizeMultiplier * MaxY + MapSizeMultiplier);
+    SetLength(Checked[x], MapSizeMultiplier * MaxY + MapSizeMultiplier);
+    for y := 0 to MapSizeMultiplier* MaxY+MapSizeMultiplier-1 do
+      Checked[x][y] := MaxInt;
+  end;
+
+  for x := 0 to MaxX do
+    for y := 0 to MaxY do
+    begin
+      BaseRisk := StrToInt(FInput[y][x+1]);
+      for xExtra := 0 to MapSizeMultiplier-1 do
+        for yExtra := 0 to MapSizeMultiplier-1 do
+        begin
+          risk := BaseRisk + xExtra + yExtra;
+          if Risk > 9 then
+            Risk := risk - 9;
+
+          Risks[x + xExtra*(MaxX+1)][y + yExtra*(MaxY+1)] := Risk
+        end;
+    end;
+
+  MaxX := (MaxX+1) * MapSizeMultiplier -1;
+  MaxY := (MaxY+1) * MapSizeMultiplier -1;
+
+  Work.X := 0;
+  Work.Y := 0;
+  Work.Risk := 0;
+  Queue.Enqueue(Work);
+
+  while Queue.Count > 0 do
+  begin
+    Work := Queue.Dequeue;
+
+    if (Work.X = MaxX) and (Work.Y = MaxY) then
+      exit(Work.Risk);
+    
+    if Checked[Work.X][Work.Y] <= Work.Risk then
+      continue ;
+
+    Checked[Work.X][Work.Y] := Work.Risk;
+
+    for i := 0 to 3 do
+    begin
+      NewWork.X := Work.X + DeltaX[i];
+      NewWork.Y := Work.Y + DeltaY[i];
+      if (NewWork.X >= 0) and (NewWork.X <= MaxX) and (NewWork.Y >= 0) and (NewWork.Y <= MaxY) then
+      begin
+        NewWork.Risk := risks[NewWork.x][NewWork.y] + Work.Risk;
+        Queue.Enqueue(NewWork);
+      end;
+    end;
+  end;
+end;
+
+{$ENDREGION}
 
 {$REGION 'Placeholder'}
 (*
@@ -1171,6 +1271,6 @@ initialization
 RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
-    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14]);
+    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15]);
 
 end.
