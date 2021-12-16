@@ -37,7 +37,7 @@ type
 
 function GCD(Number1, Number2: int64): int64;
 function OccurrencesOfChar(const S: string; const C: string): integer;
-function BitStringToInt(Const aBit: string): integer;
+function BitStringToInt(Const aBit: string): int64;
 function CountTrueBits(aInt: integer): integer;
 
 Const
@@ -227,7 +227,7 @@ begin
       inc(result);
 end;
 
-function BitStringToInt(Const aBit: string): integer;
+function BitStringToInt(Const aBit: string): int64;
 var i: Integer;
 begin
   Result := 0;

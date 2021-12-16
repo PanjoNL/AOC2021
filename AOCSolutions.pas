@@ -141,6 +141,14 @@ type
     function CheckCavern(Const MapSizeMultiplier: integer): integer;
   end;
 
+  TAdventOfCodeDay16 = class(TAdventOfCode)
+  private
+    VersionNumbers, BITSmessage: int64;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+  end;
 {$REGION 'placeholder'}
   (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -1235,6 +1243,136 @@ begin
     end;
   end;
 end;
+{$ENDREGION}
+{$REGION 'Placeholder'}
+procedure TAdventOfCodeDay16.BeforeSolve;
+
+  function _GetBits(Var aBits: string; Const aLength: integer): string;
+  begin
+    Result := Copy(aBits, 1, aLength);
+    Delete(aBits, 1, aLength)
+  end;
+
+  procedure _Calc(Var aResult: int64; const aValue: int64; Const aTypeId: integer);
+  begin
+    case aTypeId of
+      0: aResult := aResult + aValue;
+      1: aResult := aResult * aValue;
+      2: aResult := Min(aResult, aValue);
+      3: aResult := Max(aResult, aValue);
+    end;
+  end;
+
+  function _Compare(Const Val1, Val2: int64; Const aTypeId: integer): int64;
+  begin
+    Result := 0;
+    case aTypeId of
+      5: if Val1 > Val2 then Result := 1;
+      6: if Val1 < Val2 then Result := 1;
+      7: if Val1 = Val2 then Result := 1;
+    end;
+  end;
+
+  function ReadBits(var aBits: string; Const onlyOne: boolean): int64;
+  var NewBinaryString: string;
+      PacketLength, TypeId: integer;
+  begin
+    Result := -1;
+
+    VersionNumbers := VersionNumbers + BitStringToInt(_GetBits(aBits, 3));
+    TypeId := BitStringToInt(_GetBits(aBits, 3)) ;
+
+    if TypeId = 4 then  //Literal value
+    begin
+      NewBinaryString := '';
+      while _GetBits(aBits, 1) = '1' do
+        NewBinaryString := NewBinaryString + _GetBits(aBits, 4);
+      NewBinaryString := NewBinaryString + _GetBits(aBits, 4);
+      Result := BitStringToInt(NewBinaryString);
+    end
+    else //Operator;
+    begin
+      case TypeId of //Defaults
+       0,3,5,6,7: Result := 0;
+       1: Result := 1;
+       2: Result := MaxInt;
+      end;
+
+      if _GetBits(aBits, 1) = '0' then
+      begin
+        PacketLength := BitStringToInt(_GetBits(aBits, 15));
+        NewBinaryString := _GetBits(aBits, PacketLength);
+
+        if TypeId < 4 then
+        begin  while Length(NewBinaryString) > 0 do
+            _Calc(Result, ReadBits(NewBinaryString, True), TypeId);
+        end
+        else
+          Result := _Compare(ReadBits(NewBinaryString, True), ReadBits(NewBinaryString, True), TypeId);
+      end
+      else
+      begin
+        PacketLength := BitStringToInt(_GetBits(aBits, 11));
+
+        while PacketLength > 0 do
+        begin
+          dec(PacketLength);
+
+          if TypeId < 4 then
+            _Calc(Result, ReadBits(aBits, True), TypeId)
+          else
+          begin
+            Result := _Compare(ReadBits(aBits, True), ReadBits(aBits, True), TypeId);
+            dec(PacketLength);
+            Assert(PacketLength = 0)
+          end
+        end;
+      end;
+    end;
+ end;
+
+var
+  BinaryString, s: string;
+  i: integer;
+begin
+  s := FInput[0];
+  BinaryString := '';
+  for i := 1 to Length(s) do
+    case Pos(s[i], '0123456789ABCDEF') of
+      1: BinaryString := BinaryString +'0000';
+      2: BinaryString := BinaryString +'0001';
+      3: BinaryString := BinaryString +'0010';
+      4: BinaryString := BinaryString +'0011';
+      5: BinaryString := BinaryString +'0100';
+      6: BinaryString := BinaryString +'0101';
+      7: BinaryString := BinaryString +'0110';
+      8: BinaryString := BinaryString +'0111';
+      9: BinaryString := BinaryString +'1000';
+      10 : BinaryString := BinaryString +'1001';
+      11 : BinaryString := BinaryString +'1010';
+      12 : BinaryString := BinaryString +'1011';
+      13 : BinaryString := BinaryString +'1100';
+      14 : BinaryString := BinaryString +'1101';
+      15 : BinaryString := BinaryString +'1110';
+      16 : BinaryString := BinaryString +'1111';
+    else
+      Assert(False, s[i]);
+    end;
+
+ VersionNumbers := 0;
+ BITSmessage :=  ReadBits(BinaryString, True);
+end;
+
+function TAdventOfCodeDay16.SolveA: Variant;
+begin
+  Result := VersionNumbers;
+end;
+
+function TAdventOfCodeDay16.SolveB: Variant;
+begin
+  Result := BITSmessage;
+end;
+
 
 {$ENDREGION}
 
@@ -1271,6 +1409,7 @@ initialization
 RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
-    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15]);
+    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
+    TAdventOfCodeDay16]);
 
 end.
