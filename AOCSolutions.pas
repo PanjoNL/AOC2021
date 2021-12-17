@@ -149,6 +149,15 @@ type
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
   end;
+
+  TAdventOfCodeDay17 = class(TAdventOfCode)
+  private
+    MaxHeight, VelocityValues: integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+  end;
 {$REGION 'placeholder'}
   (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -1244,7 +1253,7 @@ begin
   end;
 end;
 {$ENDREGION}
-{$REGION 'Placeholder'}
+{$REGION 'TAdventOfCodeDay16'}
 procedure TAdventOfCodeDay16.BeforeSolve;
 
   function _GetBits(Var aBits: string; Const aLength: integer): string;
@@ -1375,6 +1384,62 @@ end;
 
 
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay17'}
+procedure TAdventOfCodeDay17.BeforeSolve;
+var
+  s: string;
+  Split: TStringDynArray;
+  Height, TargetMinX, TargetMaxX, TargetMinY, TargetMaxY, x, y: integer;
+  Probe, Velocity: TPoint;
+begin
+  MaxHeight := 0;
+  VelocityValues := 0;
+
+  s := FInput[0];
+  s := s.Replace('..', ' ', [rfReplaceAll]).Replace('=', ' ', [rfReplaceAll]).Replace(',', '', [rfReplaceAll]);
+  Split := SplitString(s, ' ');
+
+  TargetMinX := Split[3].ToInteger;
+  TargetMaxX := Split[4].ToInteger;
+  TargetMinY := Split[6].ToInteger;
+  TargetMaxY := Split[7].ToInteger;
+
+  for x := 0 to TargetMaxX do
+    for y := TargetMinY to abs(TargetMinY) do
+    begin
+      Probe := TPoint.Zero;
+      Velocity := TPoint.Create(x,y);
+      Height := 0;
+      while (Probe.y >= TargetMinY) and (Probe.X <= TargetMaxX)  do
+      begin
+        if (Velocity.x = 0) and (Probe.x < TargetMinX) then
+          break;
+
+        Probe := Probe.Add(Velocity);
+        Velocity.x :=  Max(Velocity.X-1, 0);
+        Velocity.Y := Velocity.Y-1;
+        Height := Max(Height, Probe.y);
+        if (Probe.x >= TargetMinX) and (Probe.X <= TargetMaxX) and (Probe.Y >= TargetMinY) and (Probe.Y <= TargetMaxY) then
+        begin
+          MaxHeight := Max(MaxHeight, Height);
+          Inc(VelocityValues);
+          break;
+        end;
+      end;
+    end;
+end;
+
+function TAdventOfCodeDay17.SolveA: Variant;
+begin
+  Result := MaxHeight;
+end;
+
+function TAdventOfCodeDay17.SolveB: Variant;
+begin
+  Result := VelocityValues;
+end;
+{$ENDREGION}
+
 
 {$REGION 'Placeholder'}
 (*
@@ -1410,6 +1475,6 @@ RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
     TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
-    TAdventOfCodeDay16]);
+    TAdventOfCodeDay16,TAdventOfCodeDay17]);
 
 end.
