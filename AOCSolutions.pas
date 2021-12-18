@@ -6,7 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Generics.Defaults, System.Generics.Collections,
   system.Diagnostics, AOCBase, RegularExpressions, System.DateUtils, system.StrUtils,
-  system.Math, uAOCUtils, system.Types, PriorityQueues;
+  system.Math, uAOCUtils, system.Types, PriorityQueues, System.Json;
 
 type
   TAdventOfCodeDay1 = class(TAdventOfCode)
@@ -157,6 +157,33 @@ type
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
+  end;
+
+  type TSnailFishNode = class
+  private
+    Parent, Left, Right: TSnailFishNode;
+    IntValue: integer;
+
+    function Explode(aDepth: integer): Boolean;
+    function Split: boolean;
+    function IsSimpleNode: Boolean;
+    procedure UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
+    procedure UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
+  public
+    Constructor create(aString: string); overload;
+    Constructor create(aParent: TSnailFishNode; aJson: TJsonValue); overload;
+    Constructor create(aParent: TSnailFishNode; aIntValue: integer); overload;
+    Constructor create(aLeft, aRight: TSnailFishNode); overload;
+    destructor Destroy; override;
+
+    procedure Stabalize;
+    function CalcMagnitude: integer;
+  end;
+
+  TAdventOfCodeDay18 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
   end;
 {$REGION 'placeholder'}
   (*
@@ -1439,7 +1466,201 @@ begin
   Result := VelocityValues;
 end;
 {$ENDREGION}
+{$REGION 'TSnailFishNode'}
+constructor TSnailFishNode.create(aString: string);
+var Json: TJsonValue;
+begin
+  Json := TJSONObject.ParseJSONValue(aString);
+  create(nil, Json);
+  Json.Free;
+end;
 
+constructor TSnailFishNode.create(aParent: TSnailFishNode; aJson: TJsonValue);
+begin
+  Parent := aParent;
+
+  if aJson is TJSONArray then
+  begin
+    Left := TSnailFishNode.create(self, TJsonArray(aJson).Items[0]);
+    Right := TSnailFishNode.create(self, TJsonArray(aJson).Items[1]);
+    IntValue := -1;
+  end
+  else
+    IntValue := TJSONNumber(aJson).AsInt;
+end;
+
+constructor TSnailFishNode.create(aParent: TSnailFishNode; aIntValue: integer);
+begin
+  Parent := aParent;
+  IntValue := aIntValue;
+end;
+
+constructor TSnailFishNode.create(aLeft, aRight: TSnailFishNode);
+begin
+  Left := aLeft;
+  Right := aRight;
+
+  Left.Parent := Self;
+  Right.Parent := Self;
+end;
+
+destructor TSnailFishNode.Destroy;
+begin
+  if Assigned(Left) then
+    Left.Free;
+  if Assigned(Right) then
+    Right.Free;
+end;
+
+function TSnailFishNode.Explode(aDepth: integer): Boolean;
+begin
+  Result := False;
+
+  if Left.IsSimpleNode and Right.IsSimpleNode then
+  begin
+    if aDepth >= 4 then
+    begin
+      Parent.UpdateLeft(Left.Intvalue, self);
+      Parent.UpdateRight(Right.IntValue, self);
+      FreeAndNil(Left);
+      FreeAndNil(Right);
+      IntValue := 0;
+      Result := True;
+    end;
+
+    exit;
+  end;
+
+  if not Left.IsSimpleNode then
+    Result := Left.Explode(aDepth + 1);
+
+  if Result then
+    exit;
+
+  if not Right.IsSimpleNode then
+    Result := Right.Explode(aDepth + 1);
+end;
+
+function TSnailFishNode.IsSimpleNode: Boolean;
+begin
+  Result := not (Assigned(left) or Assigned(Right))
+end;
+
+function TSnailFishNode.Split: boolean;
+begin
+  Result := False;
+  if IsSimpleNode then
+  begin
+    if IntValue > 9 then
+    begin
+      Result := true;
+      Left := TSnailFishNode.create(Self, Trunc(IntValue/2));
+      Right := TSnailFishNode.create(Self, Ceil(IntValue/2));
+      IntValue := -1;
+    end;
+
+    exit;
+  end;
+
+  Result := Left.Split;
+  if Result then
+    Exit;
+  Result := Right.Split;
+end;
+
+procedure TSnailFishNode.Stabalize;
+begin
+  while true do
+  begin
+    if Explode(0) then
+      Continue;
+
+    if Split then
+      Continue;
+
+    exit;
+  end;
+end;
+
+procedure TSnailFishNode.UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
+var tmpNode: TSnailFishNode;
+begin
+  if Right = aExplodingNode then
+  begin
+    if Assigned(Parent) then
+      Parent.UpdateRight(aValue, Self);
+    exit;
+  end;
+
+  tmpNode := Right;
+  while not tmpNode.IsSimpleNode do
+    tmpNode := tmpNode.Left;
+  inc(tmpNode.IntValue, aValue);
+end;
+
+procedure TSnailFishNode.UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
+var tmpNode: TSnailFishNode;
+begin
+  if Left = aExplodingNode then
+  begin
+    if Assigned(Parent) then
+      Parent.UpdateLeft(aValue, Self);
+    exit;
+  end;
+
+  tmpNode := Left;
+  while not tmpNode.IsSimpleNode do
+    tmpNode := tmpNode.Right;
+  inc(tmpNode.IntValue, aValue);
+end;
+
+function TSnailFishNode.CalcMagnitude: integer;
+begin
+  if IsSimpleNode then
+    Result := IntValue
+  else
+    Result := 3 * Left.CalcMagnitude + 2 * Right.CalcMagnitude
+end;
+{$ENDREGION}
+{$REGION 'TAdventOfCodeDay18'}
+function TAdventOfCodeDay18.SolveA: Variant;
+var
+  i: integer;
+  SnailFishNode: TSnailFishNode;
+begin
+  SnailFishNode := TSnailFishNode.create(TSnailFishNode.create((FInput[0])), TSnailFishNode.Create(FInput[1]));
+  SnailFishNode.Stabalize;
+
+  for i := 2 to FInput.Count -1 do
+  begin
+    SnailFishNode := TSnailFishNode.create(SnailFishNode, TSnailFishNode.create(FInput[i]));
+    SnailFishNode.Stabalize;
+  end;
+
+  Result := SnailFishNode.CalcMagnitude;
+  SnailFishNode.Free;
+end;
+
+function TAdventOfCodeDay18.SolveB: Variant;
+var
+  i,j: integer;
+  SnailFishNode: TSnailFishNode;
+begin
+  Result := 0;
+
+  for i := 0 to FInput.Count -1 do
+    for j := 0 to FInput.Count -1 do
+    begin
+      if i=j then
+        Continue;
+
+      SnailFishNode := TSnailFishNode.create(TSnailFishNode.create(FInput[i]), TSnailFishNode.create(FInput[j]));
+      SnailFishNode.Stabalize;
+      Result := Max(Result, SnailFishNode.CalcMagnitude);
+      SnailFishNode.Free;
+    end;
+end;
+{$ENDREGION}
 
 {$REGION 'Placeholder'}
 (*
@@ -1475,6 +1696,6 @@ RegisterClasses([
     TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
     TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
     TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
-    TAdventOfCodeDay16,TAdventOfCodeDay17]);
+    TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18]);
 
 end.

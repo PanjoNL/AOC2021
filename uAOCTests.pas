@@ -16,7 +16,7 @@ public
   Class procedure RunTests(aConfig: TAOCConfig);
 end;
 
-Const AOCTestData: array[0..16] of AOCTest =
+Const AOCTestData: array[0..17] of AOCTest =
 (
  (AOCClass: TAdventOfCodeDay1; ExpectedSolutionA: '1502'; ExpectedSolutionB: '1538'),
  (AOCClass: TAdventOfCodeDay2; ExpectedSolutionA: '2272262'; ExpectedSolutionB: '2134882034'),
@@ -34,8 +34,10 @@ Const AOCTestData: array[0..16] of AOCTest =
  (AOCClass: TAdventOfCodeDay14; ExpectedSolutionA: '2937'; ExpectedSolutionB: '3390034818249'),
  (AOCClass: TAdventOfCodeDay15; ExpectedSolutionA: '589'; ExpectedSolutionB: '2885'),
  (AOCClass: TAdventOfCodeDay16; ExpectedSolutionA: '901'; ExpectedSolutionB: '110434737925'),
- (AOCClass: TAdventOfCodeDay17; ExpectedSolutionA: '13203'; ExpectedSolutionB: '5644')
- );
+ (AOCClass: TAdventOfCodeDay17; ExpectedSolutionA: '13203'; ExpectedSolutionB: '5644'),
+ (AOCClass: TAdventOfCodeDay18; ExpectedSolutionA: '3486'; ExpectedSolutionB: '4747')
+
+);
 
 implementation
 
