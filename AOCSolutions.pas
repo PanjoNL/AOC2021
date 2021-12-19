@@ -3,10 +3,12 @@ unit AOCSolutions;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes,
   Generics.Defaults, System.Generics.Collections,
-  system.Diagnostics, AOCBase, RegularExpressions, System.DateUtils, system.StrUtils,
-  system.Math, uAOCUtils, system.Types, PriorityQueues, System.Json;
+  System.Diagnostics, AOCBase, RegularExpressions, System.DateUtils,
+  System.StrUtils,
+  System.Math, uAOCUtils, System.Types, PriorityQueues, System.Json;
 
 type
   TAdventOfCodeDay1 = class(TAdventOfCode)
@@ -50,7 +52,7 @@ type
 
   TAdventOfCodeDay6 = class(TAdventOfCode)
   private
-    function SimulateLanternfish(Const Days: Integer): Int64;
+    function SimulateLanternfish(Const Days: integer): Int64;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -58,7 +60,7 @@ type
 
   TAdventOfCodeDay7 = class(TAdventOfCode)
   private
-    function CalculateFuelCost(ExpensiveBurning: boolean): integer;
+    function CalculateFuelCost(ExpensiveBurning: Boolean): integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -72,7 +74,7 @@ type
 
   TAdventOfCodeDay9 = class(TAdventOfCode)
   private
-    function ExploreBasins(Const OnlyLowestPoints: boolean): integer;
+    function ExploreBasins(Const OnlyLowestPoints: Boolean): integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -80,7 +82,7 @@ type
 
   TAdventOfCodeDay10 = class(TAdventOfCode)
   private
-    SyntaxScore, AutoCompleteScore: int64;
+    SyntaxScore, AutoCompleteScore: Int64;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -98,8 +100,8 @@ type
   TCave = class
   public
     ConnectedCaves: TList<TCave>;
-    IsStartCave, IsEndCave, IsLowercase: boolean;
-    CaveId: Integer;
+    IsStartCave, IsEndCave, IsLowercase: Boolean;
+    CaveId: integer;
     constructor Create(const aCaveName: string; aCaveId: integer);
     destructor Destroy; override;
   end;
@@ -107,7 +109,7 @@ type
   TAdventOfCodeDay12 = class(TAdventOfCode)
   private
     Caves: TDictionary<string, TCave>;
-    function ExploreCaves(Const CanUseLowercaseCaveTwice: boolean): integer;
+    function ExploreCaves(Const CanUseLowercaseCaveTwice: Boolean): integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -126,7 +128,7 @@ type
   TAdventOfCodeDay14 = class(TAdventOfCode)
   private
     Rules: TDictionary<string, string>;
-    function BuildPolymer(Const aRounds: integer): int64;
+    function BuildPolymer(Const aRounds: integer): Int64;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -143,7 +145,7 @@ type
 
   TAdventOfCodeDay16 = class(TAdventOfCode)
   private
-    VersionNumbers, BITSmessage: int64;
+    VersionNumbers, BITSmessage: Int64;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -159,21 +161,22 @@ type
     procedure BeforeSolve; override;
   end;
 
-  type TSnailFishNode = class
+type
+  TSnailFishNode = class
   private
     Parent, Left, Right: TSnailFishNode;
     IntValue: integer;
 
     function Explode(aDepth: integer): Boolean;
-    function Split: boolean;
+    function Split: Boolean;
     function IsSimpleNode: Boolean;
     procedure UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
     procedure UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
   public
-    Constructor create(aString: string); overload;
-    Constructor create(aParent: TSnailFishNode; aJson: TJsonValue); overload;
-    Constructor create(aParent: TSnailFishNode; aIntValue: integer); overload;
-    Constructor create(aLeft, aRight: TSnailFishNode); overload;
+    Constructor Create(aString: string); overload;
+    Constructor Create(aParent: TSnailFishNode; aJson: TJsonValue); overload;
+    Constructor Create(aParent: TSnailFishNode; aIntValue: integer); overload;
+    Constructor Create(aLeft, aRight: TSnailFishNode); overload;
     destructor Destroy; override;
 
     procedure Stabalize;
@@ -185,21 +188,54 @@ type
     function SolveA: Variant; override;
     function SolveB: Variant; override;
   end;
-{$REGION 'placeholder'}
-  (*
-  TAdventOfCodeDay = class(TAdventOfCode)
+
+  TPosition3 = record
+    x, y, z: integer;
+    class function Create(Const aX, aY, aZ: integer): TPosition3; static;
+    class operator Add(a, b: TPosition3): TPosition3;
+    class operator Subtract(a, b: TPosition3): TPosition3;
+  end;
+
+  TScanner = class
+  private
+    function CorrectPosition(Const aPosition: TPosition3; aMode: integer): TPosition3;
+  public
+    Points, CorretedPoints: TList<TPosition3>;
+    FinalStartingPoint: TPosition3;
+    Name: String;
+    constructor Create(); overload;
+    destructor Destroy; override;
+
+    procedure AddPoint(Const aString: string);
+    function MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
+    function InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
+  end;
+
+  TAdventOfCodeDay19 = class(TAdventOfCode)
+  private
+    BeaconCount, BeaconDistance: integer;
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
-    procedure AfterSolve; override;
   end;
+
+{$REGION 'placeholder'}
+  (*
+    TAdventOfCodeDay = class(TAdventOfCode)
+    protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+    procedure BeforeSolve; override;
+    procedure AfterSolve; override;
+    end;
   *)
 {$ENDREGION}
 
 implementation
 
-{$Region 'TAdventOfCodeDay1'}
+{$REGION 'TAdventOfCodeDay1'}
+
 function TAdventOfCodeDay1.SolveA: Variant;
 begin
   Result := SonarSweep(1);
@@ -211,16 +247,18 @@ begin
 end;
 
 function TAdventOfCodeDay1.SonarSweep(Const OffSet: integer): integer;
-var i: integer;
+var
+  i: integer;
 begin
   Result := 0;
-  for i := 0 to FInput.Count-OffSet-1 do
-    if StrToInt(FInput[i]) < StrToInt(FInput[i+OffSet]) then
+  for i := 0 to FInput.Count - OffSet - 1 do
+    if StrToInt(FInput[i]) < StrToInt(FInput[i + OffSet]) then
       Inc(Result);
 end;
 
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay2'}
+{$REGION 'TAdventOfCodeDay2'}
+
 function TAdventOfCodeDay2.SolveA: Variant;
 begin
   Result := ProcessCommands(True);
@@ -245,44 +283,48 @@ begin
   begin
     Split := SplitString(s, ' ');
     units := StrToInt(Split[1]);
-    case IndexText(split[0], ['forward','down','up']) of
-      0: begin
-          inc(hPosition, units);
+    case IndexText(Split[0], ['forward', 'down', 'up']) of
+      0:
+        begin
+          Inc(hPosition, units);
           if not PartOne then
-            inc(depth, aim * units);
-         end;
-      1: if PartOne then
-          inc(depth, units)
-         else
-          inc(aim, units);
-      2: if PartOne then
+            Inc(depth, aim * units);
+        end;
+      1:
+        if PartOne then
+          Inc(depth, units)
+        else
+          Inc(aim, units);
+      2:
+        if PartOne then
           dec(depth, units)
         else
           dec(aim, units);
     else
-      Assert(false, s);
+      Assert(False, s);
     end;
   end;
 
   Result := depth * hPosition;
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay3'}
+{$REGION 'TAdventOfCodeDay3'}
+
 function TAdventOfCodeDay3.SolveA: Variant;
 var
   s: string;
-  OneBits: array of Integer;
+  OneBits: array of integer;
   i, GammaRate, EpsilonRate, NoOneBits, NoZeroBits: integer;
 begin
   SetLength(OneBits, Length(FInput[0]));
   for s in FInput do
-    for i := 0 to Length(s) -1 do
-      if s[i+1] = '1' then
+    for i := 0 to Length(s) - 1 do
+      if s[i + 1] = '1' then
         OneBits[i] := OneBits[i] + 1;
 
   GammaRate := 0;
   EpsilonRate := 0;
-  for i := 0 to Length(OneBits)-1 do
+  for i := 0 to Length(OneBits) - 1 do
   begin
     NoOneBits := OneBits[i];
     NoZeroBits := FInput.Count - NoOneBits;
@@ -290,10 +332,10 @@ begin
     GammaRate := GammaRate shl 1;
     EpsilonRate := EpsilonRate shl 1;
 
-    if NoOneBits > NoZeroBits  then
-      inc(GammaRate)
+    if NoOneBits > NoZeroBits then
+      Inc(GammaRate)
     else
-      inc(EpsilonRate);
+      Inc(EpsilonRate);
   end;
 
   Result := EpsilonRate * GammaRate;
@@ -301,11 +343,11 @@ end;
 
 function TAdventOfCodeDay3.SolveB: Variant;
 
-  function _FindDiagnosticValue(Const KeepLeastCommenValue: boolean): integer;
+  function _FindDiagnosticValue(Const KeepLeastCommenValue: Boolean): integer;
   var
     TempInput: TStringList;
-    NoOneBits, NoZeroBits, BitIndex, i: Integer;
-    KeepZero: boolean;
+    NoOneBits, NoZeroBits, BitIndex, i: integer;
+    KeepZero: Boolean;
     s: string;
   begin
     TempInput := TStringList.Create;
@@ -318,18 +360,18 @@ function TAdventOfCodeDay3.SolveB: Variant;
 
       for s in TempInput do
         if s[BitIndex] = '1' then
-          inc(NoOneBits)
+          Inc(NoOneBits)
         else
-          inc(NoZeroBits);
+          Inc(NoZeroBits);
 
       KeepZero := NoZeroBits > NoOneBits;
       if KeepLeastCommenValue then
         KeepZero := not KeepZero;
 
-      for i := TemPInput.Count-1 downTo 0 do
-        if (TemPInput[i][BitIndex] = '1') and KeepZero then
+      for i := TempInput.Count - 1 downTo 0 do
+        if (TempInput[i][BitIndex] = '1') and KeepZero then
           TempInput.Delete(i)
-        else if (TemPInput[i][BitIndex] = '0') and (not KeepZero) then
+        else if (TempInput[i][BitIndex] = '0') and (not KeepZero) then
           TempInput.Delete(i);
 
       if TempInput.Count = 1 then
@@ -344,14 +386,15 @@ begin
   Result := _FindDiagnosticValue(False) * _FindDiagnosticValue(True);
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay4'}
+{$REGION 'TAdventOfCodeDay4'}
+
 procedure TAdventOfCodeDay4.BeforeSolve;
 var
   s: string;
   BingoNumbers, card: TStringDynArray;
-  BingcoCard: Array[0..24] of integer;
+  BingcoCard: Array [0 .. 24] of integer;
   Round, GameResult: Int64;
-  Base, x, y, CurrentNumber: Integer;
+  Base, x, y, CurrentNumber: integer;
   HasWon: Boolean;
 begin
   WorstGame := 0;
@@ -360,24 +403,24 @@ begin
 
   BingoNumbers := SplitString(FInput[0], ',');
 
-  while Base < FInput.Count -1 do
+  while Base < FInput.Count - 1 do
   begin
     for y := 0 to 4 do
     begin
-      S := Trim(FInput[base].Replace('  ', ' ', [rfReplaceAll]));
-      card := SplitString(S, ' ');
+      s := Trim(FInput[Base].Replace('  ', ' ', [rfReplaceAll]));
+      card := SplitString(s, ' ');
       for x := 0 to 4 do
-        BingcoCard[x+5*y] := StrToInt(Card[x]);
+        BingcoCard[x + 5 * y] := StrToInt(card[x]);
 
       Inc(Base);
     end;
-    Inc(base);
+    Inc(Base);
 
     Round := 0;
     for s in BingoNumbers do
     begin
       CurrentNumber := StrToInt(s);
-      inc(round);
+      Inc(Round);
 
       for x := 0 to 24 do
         if BingcoCard[x] = CurrentNumber then
@@ -385,16 +428,19 @@ begin
 
       HasWon := False;
       for x := 0 to 4 do
-        HasWon := HasWon
-               or ((BingcoCard[x] < 0) and (BingcoCard[x+5] < 0) and (BingcoCard[x+10] < 0) and (BingcoCard[x+15] < 0) and (BingcoCard[x+20] < 0))
-               or ((BingcoCard[5*x] < 0) and (BingcoCard[5*x+1] < 0) and (BingcoCard[5*x+2] < 0) and (BingcoCard[5*x+3] < 0) and (BingcoCard[5*x+4] < 0));
+        HasWon := HasWon or ((BingcoCard[x] < 0) and (BingcoCard[x + 5] < 0) and
+          (BingcoCard[x + 10] < 0) and (BingcoCard[x + 15] < 0) and
+          (BingcoCard[x + 20] < 0)) or
+          ((BingcoCard[5 * x] < 0) and (BingcoCard[5 * x + 1] < 0) and
+          (BingcoCard[5 * x + 2] < 0) and (BingcoCard[5 * x + 3] < 0) and
+          (BingcoCard[5 * x + 4] < 0));
 
       if HasWon then
       begin
         GameResult := 0;
         for x := 0 to 24 do
-        if BingcoCard[x] > 0 then
-          GameResult := GameResult + CurrentNumber * BingcoCard[x];
+          if BingcoCard[x] > 0 then
+            GameResult := GameResult + CurrentNumber * BingcoCard[x];
 
         GameResult := (Round shl 32) + GameResult;
         BestGame := Min(BestGame, GameResult);
@@ -417,15 +463,19 @@ begin
 end;
 
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay5'}
-function TAdventOfCodeDay5.SacnHydrothermalVents(const UseDiagonalLines: Boolean): integer;
-const MapSize: integer = 1000;
+{$REGION 'TAdventOfCodeDay5'}
+
+function TAdventOfCodeDay5.SacnHydrothermalVents(const UseDiagonalLines
+  : Boolean): integer;
+const
+  MapSize: integer = 1000;
 var
   Map: Array of integer;
-  IntersectionsCount: Integer;
+  IntersectionsCount: integer;
 
   function _GetCoordinates(Const s: string): TPoint;
-  var Split: TStringDynArray;
+  var
+    Split: TStringDynArray;
   begin
     Split := SplitString(s, ',');
     Result := TPoint.Create(Split[0].ToInteger, Split[1].ToInteger);
@@ -433,10 +483,10 @@ var
 
   procedure _AddPointToMap(Const aX, aY: integer);
   begin
-    if Map[aX*MapSize+aY] = 1 then
+    if Map[aX * MapSize + aY] = 1 then
       Inc(IntersectionsCount);
 
-    Map[aX*MapSize+aY] := Map[aX*MapSize+aY] + 1;
+    Map[aX * MapSize + aY] := Map[aX * MapSize + aY] + 1;
   end;
 
   function _GetNewValue(Const aStart, aStop, aCurrent: integer): integer;
@@ -448,9 +498,9 @@ var
   Split: TStringDynArray;
   StartCoordinates, StopCoordinates: TPoint;
   s: string;
-  X,Y: integer;
+  x, y: integer;
 begin
-  SetLength(Map, MapSize*Mapsize);
+  SetLength(Map, MapSize * MapSize);
   IntersectionsCount := 0;
   for s in FInput do
   begin
@@ -458,17 +508,18 @@ begin
     StartCoordinates := _GetCoordinates(Split[0]);
     StopCoordinates := _GetCoordinates(Split[2]);
 
-    if (not UseDiagonalLines) and (StartCoordinates.X <> StopCoordinates.X) and (StartCoordinates.Y <> StopCoordinates.Y) then
+    if (not UseDiagonalLines) and (StartCoordinates.x <> StopCoordinates.x) and
+      (StartCoordinates.y <> StopCoordinates.y) then
       Continue;
 
-    X := StartCoordinates.X;
-    Y := StartCoordinates.Y;
+    x := StartCoordinates.x;
+    y := StartCoordinates.y;
     Repeat
-      _AddPointToMap(X,Y);
-      X := _GetNewValue(StartCoordinates.X, StopCoordinates.X, X);
-      Y := _GetNewValue(StartCoordinates.Y, StopCoordinates.Y, Y);
-    until (X = StopCoordinates.X) and (Y = StopCoordinates.Y);
-    _AddPointToMap(X,Y);
+      _AddPointToMap(x, y);
+      x := _GetNewValue(StartCoordinates.x, StopCoordinates.x, x);
+      y := _GetNewValue(StartCoordinates.y, StopCoordinates.y, y);
+    until (x = StopCoordinates.x) and (y = StopCoordinates.y);
+    _AddPointToMap(x, y);
   end;
 
   Result := IntersectionsCount;
@@ -484,7 +535,8 @@ begin
   Result := SacnHydrothermalVents(True);
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay6'}
+{$REGION 'TAdventOfCodeDay6'}
+
 function TAdventOfCodeDay6.SolveA: Variant;
 begin
   Result := SimulateLanternfish(80);
@@ -495,28 +547,30 @@ begin
   Result := SimulateLanternfish(256);
 end;
 
-function TAdventOfCodeDay6.SimulateLanternfish(Const Days: Integer): Int64;
+function TAdventOfCodeDay6.SimulateLanternfish(Const Days: integer): Int64;
 var
-  Fish: array of int64;
+  Fish: array of Int64;
   i: integer;
 begin
   SetLength(Fish, Days);
-  Fish[0] := OccurrencesOfChar(FInput[0],',')+1;
+  Fish[0] := OccurrencesOfChar(FInput[0], ',') + 1;
   for i := 1 to 5 do
-    Fish[i] := Fish[i-1] + OccurrencesOfChar(FInput[0],i.ToString);
+    Fish[i] := Fish[i - 1] + OccurrencesOfChar(FInput[0], i.ToString);
 
-  Fish[6] := 2*Fish[0];
-  Fish[7] := 2*Fish[0];
+  Fish[6] := 2 * Fish[0];
+  Fish[7] := 2 * Fish[0];
   Fish[8] := Fish[7] + Fish[1] - Fish[0];
   Fish[9] := Fish[8] + Fish[2] - Fish[1];
 
   for i := 10 to Days do
-    Fish[i] := Fish[i-1] - Fish[i-10] - Fish[i-8] + Fish[i-9] + Fish[i-7];
+    Fish[i] := Fish[i - 1] - Fish[i - 10] - Fish[i - 8] + Fish[i - 9] +
+      Fish[i - 7];
 
-  Result := Fish[Days-1];
+  Result := Fish[Days - 1];
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay7'}
+{$REGION 'TAdventOfCodeDay7'}
+
 function TAdventOfCodeDay7.SolveA: Variant;
 begin
   Result := CalculateFuelCost(False);
@@ -527,24 +581,26 @@ begin
   Result := CalculateFuelCost(True);
 end;
 
-function TAdventOfCodeDay7.CalculateFuelCost(ExpensiveBurning: boolean): integer;
+function TAdventOfCodeDay7.CalculateFuelCost(ExpensiveBurning: Boolean)
+  : integer;
 var
   s: string;
   Split: TStringDynArray;
-  BestFuelCost, Count, position, currentFuelCost, StartPosition, Distance: integer;
+  BestFuelCost, Count, position, currentFuelCost, StartPosition,
+    Distance: integer;
   Positions: TDictionary<integer, integer>;
   PositionPair: TPair<integer, integer>;
 begin
   Positions := TDictionary<integer, integer>.Create();
   StartPosition := MaxInt;
-  split := SplitString(FInput[0], ',');
-  for s in split do
+  Split := SplitString(FInput[0], ',');
+  for s in Split do
   begin
     position := s.ToInteger;
     StartPosition := Min(StartPosition, position);
-    positions.TryGetValue(position, Count);
+    Positions.TryGetValue(position, Count);
     Inc(Count);
-    positions.AddOrSetValue(position, count)
+    Positions.AddOrSetValue(position, Count)
   end;
 
   BestFuelCost := MaxInt;
@@ -554,9 +610,10 @@ begin
     begin
       Distance := abs(PositionPair.key - StartPosition);
       if ExpensiveBurning then
-         inc(CurrentFuelCost, PositionPair.Value * Round(Distance * (Distance + 1) / 2))
+        Inc(currentFuelCost, PositionPair.Value *
+          Round(Distance * (Distance + 1) / 2))
       else
-        inc(CurrentFuelCost, PositionPair.Value * Distance);
+        Inc(currentFuelCost, PositionPair.Value * Distance);
     end;
 
     BestFuelCost := Min(BestFuelCost, currentFuelCost);
@@ -567,7 +624,8 @@ begin
   Positions.Free;
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay8'}
+{$REGION 'TAdventOfCodeDay8'}
+
 function TAdventOfCodeDay8.SolveA: Variant;
 var
   s, d: string;
@@ -581,7 +639,8 @@ begin
     display := SplitString(d, ' ');
     for d in display do
       case Length(d) of
-        2,3,4,7: inc(result);
+        2, 3, 4, 7:
+          Inc(Result);
       end;
   end;
 end;
@@ -589,10 +648,12 @@ end;
 function TAdventOfCodeDay8.SolveB: Variant;
 
   function CalculateDisplay(Const aCheck, aTotal: string): integer;
-  var KnownNumbers: Array[0..9] of Integer;
+  var
+    KnownNumbers: Array [0 .. 9] of integer;
 
     function DisplayNumberToInt(aNumber: string): integer;
-    var i: integer;
+    var
+      i: integer;
     begin
       Result := 0;
       for i := ord('a') to ord('g') do
@@ -603,7 +664,8 @@ function TAdventOfCodeDay8.SolveB: Variant;
     end;
 
     function FindNumber(Const aNumber: string): integer;
-    var int, i: integer;
+    var
+      int, i: integer;
     begin
       Result := -1;
       int := DisplayNumberToInt(aNumber);
@@ -614,13 +676,13 @@ function TAdventOfCodeDay8.SolveB: Variant;
 
   var
     Split: TStringDynArray;
-    Number, i: Integer;
+    Number, i: integer;
   begin
-    split := SplitString(aCheck, ' ');
+    Split := SplitString(aCheck, ' ');
     TArray.Sort<string>(Split, TDelegatedComparer<string>.Construct(
-      function(const Left, Right: string): Integer
+      function(const Left, Right: string): integer
       begin
-        Result := Sign(Length(Left)-Length(Right));
+        Result := Sign(Length(Left) - Length(Right));
       end));
 
     KnownNumbers[1] := DisplayNumberToInt(Split[0]);
@@ -634,24 +696,24 @@ function TAdventOfCodeDay8.SolveB: Variant;
       if i <= 5 then // Could still be 2,3,5
       begin
         if CountTrueBits(KnownNumbers[1] and Number) = 2 then
-          KnownNumbers[3] := number
+          KnownNumbers[3] := Number
         else if CountTrueBits(KnownNumbers[4] and Number) = 3 then
-          KnownNumbers[5] := number
+          KnownNumbers[5] := Number
         else
-          KnownNumbers[2] := number;
+          KnownNumbers[2] := Number;
       end
-      else //Could still be 0,6,9
+      else // Could still be 0,6,9
       begin
         if CountTrueBits(Number and KnownNumbers[4]) = 4 then
-           KnownNumbers[9] := number
-        else if CountTrueBits(KnownNumbers[1] and Number) = 2then
-          KnownNumbers[0] := number
+          KnownNumbers[9] := Number
+        else if CountTrueBits(KnownNumbers[1] and Number) = 2 then
+          KnownNumbers[0] := Number
         else
-          KnownNumbers[6] := number
+          KnownNumbers[6] := Number
       end;
     end;
 
-    split := SplitString(aTotal, ' ');
+    Split := SplitString(aTotal, ' ');
     Result := 1000 * FindNumber(Split[0]);
     Result := Result + 100 * FindNumber(Split[1]);
     Result := Result + 10 * FindNumber(Split[2]);
@@ -670,7 +732,8 @@ begin
   end;
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay9'}
+{$REGION 'TAdventOfCodeDay9'}
+
 function TAdventOfCodeDay9.SolveA: Variant;
 begin
   Result := ExploreBasins(True);
@@ -681,18 +744,23 @@ begin
   Result := ExploreBasins(False);
 end;
 
-function TAdventOfCodeDay9.ExploreBasins(const OnlyLowestPoints: boolean): integer;
-Const DeltaX: Array[0..3] of integer = (1,-1,0,0);
-      DeltaY: Array[0..3] of integer = (0,0,1,-1);
-var MapWidth, MapHeight: integer;
+function TAdventOfCodeDay9.ExploreBasins(const OnlyLowestPoints
+  : Boolean): integer;
+Const
+  DeltaX: Array [0 .. 3] of integer = (1, -1, 0, 0);
+  DeltaY: Array [0 .. 3] of integer = (0, 0, 1, -1);
+var
+  MapWidth, MapHeight: integer;
 
-  function _Valid(Const aX, aY: Integer): boolean;
+  function _Valid(Const aX, aY: integer): Boolean;
   begin
     Result := (aX >= 0) and (aX <= MapWidth) and (aY > 0) and (aY <= MapHeight);
   end;
 
-  procedure CalcBasinSize(Const aStartX, aStartY, CurrHeight: integer; Const BasinPoints: TList<Integer>);
-  var i, xCheck, yCheck, Height: integer;
+  procedure CalcBasinSize(Const aStartX, aStartY, CurrHeight: integer;
+  Const BasinPoints: TList<integer>);
+  var
+    i, xCheck, yCheck, Height: integer;
   begin
     for i := 0 to 3 do
     begin
@@ -701,29 +769,29 @@ var MapWidth, MapHeight: integer;
       if not _Valid(xCheck, yCheck) then
         Continue;
 
-      if BasinPoints.Contains(xCheck*1000 + yCheck) then
+      if BasinPoints.Contains(xCheck * 1000 + yCheck) then
         Continue;
 
       Height := StrToInt(FInput[xCheck][yCheck]);
       if (Height <= CurrHeight) or (Height >= 9) then
         Continue;
 
-      BasinPoints.Add(xCheck*1000+yCheck);
+      BasinPoints.Add(xCheck * 1000 + yCheck);
       CalcBasinSize(xCheck, yCheck, Height, BasinPoints);
     end;
   end;
 
 var
-  x, y, xCheck, yCheck, Height, i: Integer;
-  BasinPoints, Basins: TList<Integer>;
+  x, y, xCheck, yCheck, Height, i: integer;
+  BasinPoints, Basins: TList<integer>;
   IsLowestPoint: Boolean;
 begin
   Result := 0;
 
   BasinPoints := TList<integer>.Create;
-  Basins := TList<Integer>.Create;
+  Basins := TList<integer>.Create;
 
-  MapWidth := FInput.Count-1;
+  MapWidth := FInput.Count - 1;
   MapHeight := Length(FInput[0]);
 
   for x := 0 to MapWidth do
@@ -735,10 +803,11 @@ begin
       begin
         yCheck := y + DeltaY[i];
         xCheck := x + DeltaX[i];
-        if not _Valid(xcheck, yCheck) then
+        if not _Valid(xCheck, yCheck) then
           Continue;
 
-        IsLowestPoint := IsLowestPoint and (Height < StrToInt(FInput[xCheck][yCheck]))
+        IsLowestPoint := IsLowestPoint and
+          (Height < StrToInt(FInput[xCheck][yCheck]))
       end;
 
       if Not IsLowestPoint then
@@ -749,8 +818,8 @@ begin
       else
       begin
         BasinPoints.Clear;
-        BasinPoints.Add(x*1000+Y);
-        CalcBasinSize(x,y, Height, BasinPoints);
+        BasinPoints.Add(x * 1000 + y);
+        CalcBasinSize(x, y, Height, BasinPoints);
         Basins.Add(BasinPoints.Count);
       end;
     end;
@@ -766,16 +835,18 @@ begin
   Basins.Free;
 end;
 {$ENDREGION}
-{$Region 'TAdventOfCodeDay10'}
+{$REGION 'TAdventOfCodeDay10'}
+
 procedure TAdventOfCodeDay10.BeforeSolve;
-Const open: Array[0..3] of string = ('(', '[', '{', '<');
-      close:Array[0..3] of string = (')', ']', '}', '>');
-      syntaxCost:Array[0..3] of integer = (3, 57, 1197, 25137);
+Const
+  open: Array [0 .. 3] of string = ('(', '[', '{', '<');
+  close: Array [0 .. 3] of string = (')', ']', '}', '>');
+  syntaxCost: Array [0 .. 3] of integer = (3, 57, 1197, 25137);
 var
   s, Current: string;
   i, index: integer;
   Stack: TStack<string>;
-  AutoCompleteScores: TList<Int64> ;
+  AutoCompleteScores: TList<Int64>;
 begin
   SyntaxScore := 0;
 
@@ -791,11 +862,11 @@ begin
       index := IndexStr(Current, open);
       if index >= 0 then
         Stack.Push(close[index])
-      else if Stack.Pop <> current then
+      else if Stack.Pop <> Current then
       begin
-        inc(SyntaxScore, syntaxCost[indexStr(Current, Close)]);
+        Inc(SyntaxScore, syntaxCost[IndexStr(Current, close)]);
         Stack.Clear;
-        Break;
+        break;
       end;
     end;
 
@@ -803,14 +874,15 @@ begin
     begin
       AutoCompleteScore := 0;
       while Stack.Count > 0 do
-        AutoCompleteScore := AutoCompleteScore * 5 + 1 + IndexStr(Stack.Pop, Close);
+        AutoCompleteScore := AutoCompleteScore * 5 + 1 +
+          IndexStr(Stack.Pop, close);
 
       AutoCompleteScores.Add(AutoCompleteScore);
     end;
   end;
 
   AutoCompleteScores.Sort;
-  AutoCompleteScore := AutoCompleteScores[Trunc(AutoCompleteScores.Count/2)];
+  AutoCompleteScore := AutoCompleteScores[Trunc(AutoCompleteScores.Count / 2)];
 
   AutoCompleteScores.Free;
   Stack.Free;
@@ -827,6 +899,7 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay11'}
+
 function TAdventOfCodeDay11.SolveA: Variant;
 begin
   Result := ObserveOctopuses(False)
@@ -839,8 +912,8 @@ end;
 
 function TAdventOfCodeDay11.ObserveOctopuses(WaitForSync: Boolean): integer;
 const
-  DeltaX: array [0..7] of integer = (1, 1, 1, 0, 0, -1, -1, -1);
-  DeltaY: array [0..7] of integer = (1, 0, -1, -1, 1, 1, 0, -1);
+  DeltaX: array [0 .. 7] of integer = (1, 1, 1, 0, 0, -1, -1, -1);
+  DeltaY: array [0 .. 7] of integer = (1, 0, -1, -1, 1, 1, 0, -1);
 var
   i, j, x, y, Count: integer;
   Point, NewPoint: TPoint;
@@ -859,39 +932,39 @@ begin
     i := 1;
     while (i <= 100) or WaitForSync do
     begin
-      for point in Octopuses.Keys do
-        Octopuses[Point] := Octopuses[point] + 1;
+      for Point in Octopuses.Keys do
+        Octopuses[Point] := Octopuses[Point] + 1;
 
-    Flashed.Clear;
-    FlashFound := True;
-    while FlashFound do
-    begin
-      FlashFound := False;
-      for point in Octopuses.Keys do
-        if (Octopuses[point] > 9) and not Flashed.Contains(point) then
-        begin
-          FlashFound := True;
-          Inc(Result);
-          Flashed.Add(point);
-
-          for j := 0 to 7 do
+      Flashed.Clear;
+      FlashFound := True;
+      while FlashFound do
+      begin
+        FlashFound := False;
+        for Point in Octopuses.Keys do
+          if (Octopuses[Point] > 9) and not Flashed.Contains(Point) then
           begin
-            NewPoint := TPoint.Create(Point);
-            NewPoint.Offset(DeltaX[j], DeltaY[j]);
-            if Octopuses.TryGetValue(NewPoint, Count) then
-              Octopuses[NewPoint] := Count + 1;
+            FlashFound := True;
+            Inc(Result);
+            Flashed.Add(Point);
+
+            for j := 0 to 7 do
+            begin
+              NewPoint := TPoint.Create(Point);
+              NewPoint.OffSet(DeltaX[j], DeltaY[j]);
+              if Octopuses.TryGetValue(NewPoint, Count) then
+                Octopuses[NewPoint] := Count + 1;
+            end;
           end;
-        end;
+      end;
+
+      if Flashed.Count = 100 then
+        Exit(i);
+
+      for Point in Flashed do
+        Octopuses[Point] := 0;
+
+      Inc(i);
     end;
-
-    if Flashed.Count = 100 then
-      Exit(i);
-
-    for point in Flashed do
-      Octopuses[point] := 0;
-
-    inc(i);
-  end;
   finally
     Octopuses.Free;
     Flashed.Free;
@@ -899,6 +972,7 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TCave'}
+
 constructor TCave.Create(const aCaveName: string; aCaveId: integer);
 begin
   IsStartCave := SameText(aCaveName, 'start');
@@ -916,6 +990,7 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay12'}
+
 procedure TAdventOfCodeDay12.BeforeSolve;
 
   function _Cave(Const aCaveName: String): TCave;
@@ -928,7 +1003,7 @@ procedure TAdventOfCodeDay12.BeforeSolve;
   end;
 
 var
-  split: TStringDynArray;
+  Split: TStringDynArray;
   s: string;
   Cave1, Cave2: TCave;
 begin
@@ -947,7 +1022,8 @@ begin
 end;
 
 procedure TAdventOfCodeDay12.AfterSolve;
-var Cave: TCave;
+var
+  Cave: TCave;
 begin
   for Cave in Caves.Values do
     Cave.Free;
@@ -964,13 +1040,18 @@ begin
   Result := ExploreCaves(True);
 end;
 
-type TByteSet = set of byte;
-function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice: boolean): integer;
+type
+  TByteSet = set of byte;
 
-  procedure _ExploreCaves(Const aCurrentCave: TCave; aVisitedLowerCaseCaves: TByteSet ; aLowercaseCaveUsedTwice: Boolean);
-  var OtherCave: TCave;
-      LowercaseCaveUsedTwice: boolean;
-      VisitedLowerCaseCaves: TByteSet;
+function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice
+  : Boolean): integer;
+
+  procedure _ExploreCaves(Const aCurrentCave: TCave;
+  aVisitedLowerCaseCaves: TByteSet; aLowercaseCaveUsedTwice: Boolean);
+  var
+    OtherCave: TCave;
+    LowercaseCaveUsedTwice: Boolean;
+    VisitedLowerCaseCaves: TByteSet;
   begin
     for OtherCave in aCurrentCave.ConnectedCaves do
     begin
@@ -989,7 +1070,7 @@ function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice: boolean
           if LowercaseCaveUsedTwice then
             Continue;
 
-          LowercaseCaveUsedTwice := true;
+          LowercaseCaveUsedTwice := True;
         end;
         Include(VisitedLowerCaseCaves, OtherCave.CaveId);
       end;
@@ -1000,10 +1081,11 @@ function TAdventOfCodeDay12.ExploreCaves(const CanUseLowercaseCaveTwice: boolean
 
 begin
   Result := 0;
-  _ExploreCaves(caves['start'], [], not CanUseLowercaseCaveTwice);
+  _ExploreCaves(Caves['start'], [], not CanUseLowercaseCaveTwice);
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay13'}
+
 function TAdventOfCodeDay13.SolveA: Variant;
 begin
   Result := FoldPaper(True);
@@ -1011,18 +1093,19 @@ end;
 
 function TAdventOfCodeDay13.SolveB: Variant;
 begin
-  Result := FoldPaper(false)
+  Result := FoldPaper(False)
 end;
 
-function TAdventOfCodeDay13.FoldPaper(const OnlyOnce: Boolean): variant;
+function TAdventOfCodeDay13.FoldPaper(const OnlyOnce: Boolean): Variant;
 var
   Points: TList<TPoint>;
   MaxX, MaxY: integer;
-  
+
   function SaveToFile: string;
-  var s: string;
-      x,y: integer;
-      lst: TStringList;
+  var
+    s: string;
+    x, y: integer;
+    lst: TStringList;
   begin
     Result := SaveFilePath;
     lst := TStringList.Create;
@@ -1030,7 +1113,7 @@ var
     begin
       s := '';
       for x := 0 to MaxX do
-        if Points.Contains(TPoint.Create(x,y)) then
+        if Points.Contains(TPoint.Create(x, y)) then
           s := s + '#'
         else
           s := s + '.';
@@ -1044,14 +1127,14 @@ var
   begin
     Result := CurrentValue;
     if CurrentValue > FoldLine then
-      Result := 2*FoldLine - CurrentValue;;
+      Result := 2 * FoldLine - CurrentValue;;
   end;
-  
-var 
+
+var
   s: string;
   Split: TStringDynArray;
   i, j: integer;
-  FoldLine, x, y: integer;  
+  FoldLine, x, y: integer;
   FoldOnX: Boolean;
   Point, NewPoint: TPoint;
 begin
@@ -1059,7 +1142,7 @@ begin
   try
     MaxX := 0;
     MaxY := 0;
-    for i := 0 to FInput.Count -1 do
+    for i := 0 to FInput.Count - 1 do
     begin
       s := Trim(FInput[i]);
       if s = '' then
@@ -1069,26 +1152,26 @@ begin
       x := Split[0].ToInteger;
       y := Split[1].ToInteger;
 
-      Points.Add(TPoint.Create(x,y));
-      MaxX := Max(MaxX, X);
-      MaxY := Max(MaxY, Y);
+      Points.Add(TPoint.Create(x, y));
+      MaxX := Max(MaxX, x);
+      MaxY := Max(MaxY, y);
     end;
 
-    while i < FInput.Count -1 do
+    while i < FInput.Count - 1 do
     begin
-      inc(i);
+      Inc(i);
       s := FInput[i];
       Split := SplitString(s, '=');
       FoldOnX := Split[0].EndsWith('x');
       FoldLine := Split[1].ToInteger;
 
-      for j := Points.Count-1 downto 0 do
+      for j := Points.Count - 1 downto 0 do
       begin
         Point := Points.ExtractAt(j);
         if FoldOnX then
-          Point.X := Vold(Point.X, FoldLine)
+          Point.x := Vold(Point.x, FoldLine)
         else
-          Point.Y := Vold(Point.Y, FoldLine);
+          Point.y := Vold(Point.y, FoldLine);
 
         if not Points.Contains(Point) then
           Points.Add(Point);
@@ -1097,27 +1180,28 @@ begin
       if FoldOnX then
         MaxX := MaxX Shr 1
       else
-        Maxy := MaxY Shr 1;
+        MaxY := MaxY Shr 1;
 
       if OnlyOnce then
         Exit(Points.Count)
     end;
 
-    Result := Format('Solution saved in: %s', [SaveToFile]);  
+    Result := Format('Solution saved in: %s', [SaveToFile]);
   finally
-    points.Free;
+    Points.Free;
   end;
 end;
 
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay14'}
+
 procedure TAdventOfCodeDay14.BeforeSolve;
 var
   Split: TStringDynArray;
   i: integer;
 begin
   Rules := TDictionary<String, string>.Create;
-  for i := 2 to FInput.Count-1 do
+  for i := 2 to FInput.Count - 1 do
   begin
     Split := SplitString(FInput[i], ' ');
     Rules.Add(Split[0], Split[2]);
@@ -1139,10 +1223,12 @@ begin
   Result := BuildPolymer(40);
 end;
 
-function TAdventOfCodeDay14.BuildPolymer(const aRounds: integer): int64;
+function TAdventOfCodeDay14.BuildPolymer(const aRounds: integer): Int64;
 
-  procedure AddToDict(aDict: TDictionary<string, int64>; Const aKey: string; aValue: int64);
-  var Val: int64;
+  procedure AddToDict(aDict: TDictionary<string, Int64>; Const aKey: string;
+  aValue: Int64);
+  var
+    Val: Int64;
   begin
     aDict.TryGetValue(aKey, Val);
     aDict.AddOrSetValue(aKey, Val + aValue);
@@ -1150,38 +1236,40 @@ function TAdventOfCodeDay14.BuildPolymer(const aRounds: integer): int64;
 
 var
   Middle: string;
-  i: int64;
-  Values: TArray<int64>;
-  Counts, PolymerParts, NewPolymerParts: TDictionary<string, int64>;
-  PolymerPair: TPair<string, int64>;
+  i: Int64;
+  Values: TArray<Int64>;
+  Counts, PolymerParts, NewPolymerParts: TDictionary<string, Int64>;
+  PolymerPair: TPair<string, Int64>;
 begin
-  PolymerParts := Tdictionary<string, int64>.Create;
-  for i := 1 to Length(FInput[0])-1 do
-    AddToDict(PolymerParts, FInput[0][i] + FInput[0][i+1], 1);
+  PolymerParts := TDictionary<string, Int64>.Create;
+  for i := 1 to Length(FInput[0]) - 1 do
+    AddToDict(PolymerParts, FInput[0][i] + FInput[0][i + 1], 1);
 
   for i := 1 to aRounds do
   begin
-    NewPolymerParts := Tdictionary<string, int64>.Create;
+    NewPolymerParts := TDictionary<string, Int64>.Create;
     for PolymerPair in PolymerParts do
     begin
-      Middle := Rules[PolymerPair.Key];
+      Middle := Rules[PolymerPair.key];
 
-      AddToDict(NewPolymerParts, PolymerPair.Key[1] + Middle, PolymerPair.Value);
-      AddToDict(NewPolymerParts, Middle + PolymerPair.Key[2], PolymerPair.Value);
+      AddToDict(NewPolymerParts, PolymerPair.key[1] + Middle,
+        PolymerPair.Value);
+      AddToDict(NewPolymerParts, Middle + PolymerPair.key[2],
+        PolymerPair.Value);
     end;
 
     PolymerParts.Free;
     PolymerParts := NewPolymerParts;
   end;
 
-  Counts := TDictionary<string, int64>.create;
+  Counts := TDictionary<string, Int64>.Create;
   Counts.Add(FInput[0][1], 1);
   for PolymerPair in PolymerParts do
-    AddToDict(Counts, PolymerPair.Key[2], PolymerPair.Value);
+    AddToDict(Counts, PolymerPair.key[2], PolymerPair.Value);
 
   Values := Counts.Values.ToArray;
-  TArray.Sort<int64>(Values);
-  Result := Values[Counts.Count-1] - Values[0];
+  TArray.Sort<Int64>(Values);
+  Result := Values[Counts.Count - 1] - Values[0];
 
   PolymerParts.Free;
   Counts.Free;
@@ -1189,6 +1277,7 @@ end;
 
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay15'}
+
 function TAdventOfCodeDay15.SolveA: Variant;
 begin
   Result := CheckCavern(1);
@@ -1199,59 +1288,65 @@ begin
   Result := CheckCavern(5);
 end;
 
-type RCavernWork = record x,y,Risk: integer; end;
-function TAdventOfCodeDay15.CheckCavern(const MapSizeMultiplier: integer): integer;
-Const DeltaX: Array[0..3] of integer = (1,0,-1,0);
-      DeltaY: Array[0..3] of integer = (0,1,0,-1);
+type
+  RCavernWork = record
+    x, y, Risk: integer;
+  end;
+
+function TAdventOfCodeDay15.CheckCavern(const MapSizeMultiplier
+  : integer): integer;
+Const
+  DeltaX: Array [0 .. 3] of integer = (1, 0, -1, 0);
+  DeltaY: Array [0 .. 3] of integer = (0, 1, 0, -1);
 var
-  risk, xExtra, yExtra, BaseRisk, i, x, y, MaxX, MaxY: integer;
+  Risk, xExtra, yExtra, BaseRisk, i, x, y, MaxX, MaxY: integer;
   Risks, Checked: Array of Array of integer;
   Work, NewWork: RCavernWork;
   Comparer: IComparer<RCavernWork>;
   Queue: PriorityQueue<RCavernWork>;
 begin
   Result := -1;
-  Comparer := TComparer<RCavernWork>.Construct
-    (function(const Left, Right: RCavernWork): Integer
+  Comparer := TComparer<RCavernWork>.Construct(
+    function(const Left, Right: RCavernWork): integer
     begin
       Result := Sign(Left.Risk - Right.Risk);
     end);
 
   Queue := PriorityQueue<RCavernWork>.Create(Comparer, Comparer);
 
-  MaxX := Length(FInput[0]) -1;
-  MaxY := FInput.Count -1;
+  MaxX := Length(FInput[0]) - 1;
+  MaxY := FInput.Count - 1;
 
-  SetLength(Risks, MapSizeMultiplier * MaxX+MapSizeMultiplier);
+  SetLength(Risks, MapSizeMultiplier * MaxX + MapSizeMultiplier);
   SetLength(Checked, MapSizeMultiplier * MaxX + MapSizeMultiplier);
-  for x := 0 to MapSizeMultiplier * MaxX + MapSizeMultiplier -1 do
+  for x := 0 to MapSizeMultiplier * MaxX + MapSizeMultiplier - 1 do
   begin
     SetLength(Risks[x], MapSizeMultiplier * MaxY + MapSizeMultiplier);
     SetLength(Checked[x], MapSizeMultiplier * MaxY + MapSizeMultiplier);
-    for y := 0 to MapSizeMultiplier* MaxY+MapSizeMultiplier-1 do
+    for y := 0 to MapSizeMultiplier * MaxY + MapSizeMultiplier - 1 do
       Checked[x][y] := MaxInt;
   end;
 
   for x := 0 to MaxX do
     for y := 0 to MaxY do
     begin
-      BaseRisk := StrToInt(FInput[y][x+1]);
-      for xExtra := 0 to MapSizeMultiplier-1 do
-        for yExtra := 0 to MapSizeMultiplier-1 do
+      BaseRisk := StrToInt(FInput[y][x + 1]);
+      for xExtra := 0 to MapSizeMultiplier - 1 do
+        for yExtra := 0 to MapSizeMultiplier - 1 do
         begin
-          risk := BaseRisk + xExtra + yExtra;
+          Risk := BaseRisk + xExtra + yExtra;
           if Risk > 9 then
-            Risk := risk - 9;
+            Risk := Risk - 9;
 
-          Risks[x + xExtra*(MaxX+1)][y + yExtra*(MaxY+1)] := Risk
+          Risks[x + xExtra * (MaxX + 1)][y + yExtra * (MaxY + 1)] := Risk
         end;
     end;
 
-  MaxX := (MaxX+1) * MapSizeMultiplier -1;
-  MaxY := (MaxY+1) * MapSizeMultiplier -1;
+  MaxX := (MaxX + 1) * MapSizeMultiplier - 1;
+  MaxY := (MaxY + 1) * MapSizeMultiplier - 1;
 
-  Work.X := 0;
-  Work.Y := 0;
+  Work.x := 0;
+  Work.y := 0;
   Work.Risk := 0;
   Queue.Enqueue(Work);
 
@@ -1259,21 +1354,22 @@ begin
   begin
     Work := Queue.Dequeue;
 
-    if (Work.X = MaxX) and (Work.Y = MaxY) then
-      exit(Work.Risk);
-    
-    if Checked[Work.X][Work.Y] <= Work.Risk then
-      continue ;
+    if (Work.x = MaxX) and (Work.y = MaxY) then
+      Exit(Work.Risk);
 
-    Checked[Work.X][Work.Y] := Work.Risk;
+    if Checked[Work.x][Work.y] <= Work.Risk then
+      Continue;
+
+    Checked[Work.x][Work.y] := Work.Risk;
 
     for i := 0 to 3 do
     begin
-      NewWork.X := Work.X + DeltaX[i];
-      NewWork.Y := Work.Y + DeltaY[i];
-      if (NewWork.X >= 0) and (NewWork.X <= MaxX) and (NewWork.Y >= 0) and (NewWork.Y <= MaxY) then
+      NewWork.x := Work.x + DeltaX[i];
+      NewWork.y := Work.y + DeltaY[i];
+      if (NewWork.x >= 0) and (NewWork.x <= MaxX) and (NewWork.y >= 0) and
+        (NewWork.y <= MaxY) then
       begin
-        NewWork.Risk := risks[NewWork.x][NewWork.y] + Work.Risk;
+        NewWork.Risk := Risks[NewWork.x][NewWork.y] + Work.Risk;
         Queue.Enqueue(NewWork);
       end;
     end;
@@ -1281,6 +1377,7 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay16'}
+
 procedure TAdventOfCodeDay16.BeforeSolve;
 
   function _GetBits(Var aBits: string; Const aLength: integer): string;
@@ -1289,36 +1386,48 @@ procedure TAdventOfCodeDay16.BeforeSolve;
     Delete(aBits, 1, aLength)
   end;
 
-  procedure _Calc(Var aResult: int64; const aValue: int64; Const aTypeId: integer);
+  procedure _Calc(Var aResult: Int64; const aValue: Int64;
+  Const aTypeId: integer);
   begin
     case aTypeId of
-      0: aResult := aResult + aValue;
-      1: aResult := aResult * aValue;
-      2: aResult := Min(aResult, aValue);
-      3: aResult := Max(aResult, aValue);
+      0:
+        aResult := aResult + aValue;
+      1:
+        aResult := aResult * aValue;
+      2:
+        aResult := Min(aResult, aValue);
+      3:
+        aResult := Max(aResult, aValue);
     end;
   end;
 
-  function _Compare(Const Val1, Val2: int64; Const aTypeId: integer): int64;
+  function _Compare(Const Val1, Val2: Int64; Const aTypeId: integer): Int64;
   begin
     Result := 0;
     case aTypeId of
-      5: if Val1 > Val2 then Result := 1;
-      6: if Val1 < Val2 then Result := 1;
-      7: if Val1 = Val2 then Result := 1;
+      5:
+        if Val1 > Val2 then
+          Result := 1;
+      6:
+        if Val1 < Val2 then
+          Result := 1;
+      7:
+        if Val1 = Val2 then
+          Result := 1;
     end;
   end;
 
-  function ReadBits(var aBits: string; Const onlyOne: boolean): int64;
-  var NewBinaryString: string;
-      PacketLength, TypeId: integer;
+  function ReadBits(var aBits: string; Const onlyOne: Boolean): Int64;
+  var
+    NewBinaryString: string;
+    PacketLength, TypeId: integer;
   begin
     Result := -1;
 
     VersionNumbers := VersionNumbers + BitStringToInt(_GetBits(aBits, 3));
-    TypeId := BitStringToInt(_GetBits(aBits, 3)) ;
+    TypeId := BitStringToInt(_GetBits(aBits, 3));
 
-    if TypeId = 4 then  //Literal value
+    if TypeId = 4 then // Literal value
     begin
       NewBinaryString := '';
       while _GetBits(aBits, 1) = '1' do
@@ -1326,12 +1435,15 @@ procedure TAdventOfCodeDay16.BeforeSolve;
       NewBinaryString := NewBinaryString + _GetBits(aBits, 4);
       Result := BitStringToInt(NewBinaryString);
     end
-    else //Operator;
+    else // Operator;
     begin
-      case TypeId of //Defaults
-       0,3,5,6,7: Result := 0;
-       1: Result := 1;
-       2: Result := MaxInt;
+      case TypeId of // Defaults
+        0, 3, 5, 6, 7:
+          Result := 0;
+        1:
+          Result := 1;
+        2:
+          Result := MaxInt;
       end;
 
       if _GetBits(aBits, 1) = '0' then
@@ -1340,11 +1452,13 @@ procedure TAdventOfCodeDay16.BeforeSolve;
         NewBinaryString := _GetBits(aBits, PacketLength);
 
         if TypeId < 4 then
-        begin  while Length(NewBinaryString) > 0 do
+        begin
+          while Length(NewBinaryString) > 0 do
             _Calc(Result, ReadBits(NewBinaryString, True), TypeId);
         end
         else
-          Result := _Compare(ReadBits(NewBinaryString, True), ReadBits(NewBinaryString, True), TypeId);
+          Result := _Compare(ReadBits(NewBinaryString, True),
+            ReadBits(NewBinaryString, True), TypeId);
       end
       else
       begin
@@ -1358,14 +1472,15 @@ procedure TAdventOfCodeDay16.BeforeSolve;
             _Calc(Result, ReadBits(aBits, True), TypeId)
           else
           begin
-            Result := _Compare(ReadBits(aBits, True), ReadBits(aBits, True), TypeId);
+            Result := _Compare(ReadBits(aBits, True),
+              ReadBits(aBits, True), TypeId);
             dec(PacketLength);
             Assert(PacketLength = 0)
           end
         end;
       end;
     end;
- end;
+  end;
 
 var
   BinaryString, s: string;
@@ -1374,29 +1489,45 @@ begin
   s := FInput[0];
   BinaryString := '';
   for i := 1 to Length(s) do
-    case Pos(s[i], '0123456789ABCDEF') of
-      1: BinaryString := BinaryString +'0000';
-      2: BinaryString := BinaryString +'0001';
-      3: BinaryString := BinaryString +'0010';
-      4: BinaryString := BinaryString +'0011';
-      5: BinaryString := BinaryString +'0100';
-      6: BinaryString := BinaryString +'0101';
-      7: BinaryString := BinaryString +'0110';
-      8: BinaryString := BinaryString +'0111';
-      9: BinaryString := BinaryString +'1000';
-      10 : BinaryString := BinaryString +'1001';
-      11 : BinaryString := BinaryString +'1010';
-      12 : BinaryString := BinaryString +'1011';
-      13 : BinaryString := BinaryString +'1100';
-      14 : BinaryString := BinaryString +'1101';
-      15 : BinaryString := BinaryString +'1110';
-      16 : BinaryString := BinaryString +'1111';
+    case pos(s[i], '0123456789ABCDEF') of
+      1:
+        BinaryString := BinaryString + '0000';
+      2:
+        BinaryString := BinaryString + '0001';
+      3:
+        BinaryString := BinaryString + '0010';
+      4:
+        BinaryString := BinaryString + '0011';
+      5:
+        BinaryString := BinaryString + '0100';
+      6:
+        BinaryString := BinaryString + '0101';
+      7:
+        BinaryString := BinaryString + '0110';
+      8:
+        BinaryString := BinaryString + '0111';
+      9:
+        BinaryString := BinaryString + '1000';
+      10:
+        BinaryString := BinaryString + '1001';
+      11:
+        BinaryString := BinaryString + '1010';
+      12:
+        BinaryString := BinaryString + '1011';
+      13:
+        BinaryString := BinaryString + '1100';
+      14:
+        BinaryString := BinaryString + '1101';
+      15:
+        BinaryString := BinaryString + '1110';
+      16:
+        BinaryString := BinaryString + '1111';
     else
       Assert(False, s[i]);
     end;
 
- VersionNumbers := 0;
- BITSmessage :=  ReadBits(BinaryString, True);
+  VersionNumbers := 0;
+  BITSmessage := ReadBits(BinaryString, True);
 end;
 
 function TAdventOfCodeDay16.SolveA: Variant;
@@ -1409,9 +1540,9 @@ begin
   Result := BITSmessage;
 end;
 
-
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay17'}
+
 procedure TAdventOfCodeDay17.BeforeSolve;
 var
   s: string;
@@ -1423,7 +1554,8 @@ begin
   VelocityValues := 0;
 
   s := FInput[0];
-  s := s.Replace('..', ' ', [rfReplaceAll]).Replace('=', ' ', [rfReplaceAll]).Replace(',', '', [rfReplaceAll]);
+  s := s.Replace('..', ' ', [rfReplaceAll]).Replace('=', ' ', [rfReplaceAll])
+    .Replace(',', '', [rfReplaceAll]);
   Split := SplitString(s, ' ');
 
   TargetMinX := Split[3].ToInteger;
@@ -1435,18 +1567,19 @@ begin
     for y := TargetMinY to abs(TargetMinY) do
     begin
       Probe := TPoint.Zero;
-      Velocity := TPoint.Create(x,y);
+      Velocity := TPoint.Create(x, y);
       Height := 0;
-      while (Probe.y >= TargetMinY) and (Probe.X <= TargetMaxX)  do
+      while (Probe.y >= TargetMinY) and (Probe.x <= TargetMaxX) do
       begin
         if (Velocity.x = 0) and (Probe.x < TargetMinX) then
           break;
 
         Probe := Probe.Add(Velocity);
-        Velocity.x :=  Max(Velocity.X-1, 0);
-        Velocity.Y := Velocity.Y-1;
+        Velocity.x := Max(Velocity.x - 1, 0);
+        Velocity.y := Velocity.y - 1;
         Height := Max(Height, Probe.y);
-        if (Probe.x >= TargetMinX) and (Probe.X <= TargetMaxX) and (Probe.Y >= TargetMinY) and (Probe.Y <= TargetMaxY) then
+        if (Probe.x >= TargetMinX) and (Probe.x <= TargetMaxX) and
+          (Probe.y >= TargetMinY) and (Probe.y <= TargetMaxY) then
         begin
           MaxHeight := Max(MaxHeight, Height);
           Inc(VelocityValues);
@@ -1467,41 +1600,43 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TSnailFishNode'}
-constructor TSnailFishNode.create(aString: string);
-var Json: TJsonValue;
+
+constructor TSnailFishNode.Create(aString: string);
+var
+  Json: TJsonValue;
 begin
   Json := TJSONObject.ParseJSONValue(aString);
-  create(nil, Json);
+  Create(nil, Json);
   Json.Free;
 end;
 
-constructor TSnailFishNode.create(aParent: TSnailFishNode; aJson: TJsonValue);
+constructor TSnailFishNode.Create(aParent: TSnailFishNode; aJson: TJsonValue);
 begin
   Parent := aParent;
 
   if aJson is TJSONArray then
   begin
-    Left := TSnailFishNode.create(self, TJsonArray(aJson).Items[0]);
-    Right := TSnailFishNode.create(self, TJsonArray(aJson).Items[1]);
+    Left := TSnailFishNode.Create(self, TJSONArray(aJson).Items[0]);
+    Right := TSnailFishNode.Create(self, TJSONArray(aJson).Items[1]);
     IntValue := -1;
   end
   else
     IntValue := TJSONNumber(aJson).AsInt;
 end;
 
-constructor TSnailFishNode.create(aParent: TSnailFishNode; aIntValue: integer);
+constructor TSnailFishNode.Create(aParent: TSnailFishNode; aIntValue: integer);
 begin
   Parent := aParent;
   IntValue := aIntValue;
 end;
 
-constructor TSnailFishNode.create(aLeft, aRight: TSnailFishNode);
+constructor TSnailFishNode.Create(aLeft, aRight: TSnailFishNode);
 begin
   Left := aLeft;
   Right := aRight;
 
-  Left.Parent := Self;
-  Right.Parent := Self;
+  Left.Parent := self;
+  Right.Parent := self;
 end;
 
 destructor TSnailFishNode.Destroy;
@@ -1520,7 +1655,7 @@ begin
   begin
     if aDepth >= 4 then
     begin
-      Parent.UpdateLeft(Left.Intvalue, self);
+      Parent.UpdateLeft(Left.IntValue, self);
       Parent.UpdateRight(Right.IntValue, self);
       FreeAndNil(Left);
       FreeAndNil(Right);
@@ -1528,14 +1663,14 @@ begin
       Result := True;
     end;
 
-    exit;
+    Exit;
   end;
 
   if not Left.IsSimpleNode then
     Result := Left.Explode(aDepth + 1);
 
   if Result then
-    exit;
+    Exit;
 
   if not Right.IsSimpleNode then
     Result := Right.Explode(aDepth + 1);
@@ -1543,23 +1678,23 @@ end;
 
 function TSnailFishNode.IsSimpleNode: Boolean;
 begin
-  Result := not (Assigned(left) or Assigned(Right))
+  Result := not(Assigned(Left) or Assigned(Right))
 end;
 
-function TSnailFishNode.Split: boolean;
+function TSnailFishNode.Split: Boolean;
 begin
   Result := False;
   if IsSimpleNode then
   begin
     if IntValue > 9 then
     begin
-      Result := true;
-      Left := TSnailFishNode.create(Self, Trunc(IntValue/2));
-      Right := TSnailFishNode.create(Self, Ceil(IntValue/2));
+      Result := True;
+      Left := TSnailFishNode.Create(self, Trunc(IntValue / 2));
+      Right := TSnailFishNode.Create(self, Ceil(IntValue / 2));
       IntValue := -1;
     end;
 
-    exit;
+    Exit;
   end;
 
   Result := Left.Split;
@@ -1570,7 +1705,7 @@ end;
 
 procedure TSnailFishNode.Stabalize;
 begin
-  while true do
+  while True do
   begin
     if Explode(0) then
       Continue;
@@ -1578,40 +1713,44 @@ begin
     if Split then
       Continue;
 
-    exit;
+    Exit;
   end;
 end;
 
-procedure TSnailFishNode.UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
-var tmpNode: TSnailFishNode;
+procedure TSnailFishNode.UpdateRight(aValue: integer;
+aExplodingNode: TSnailFishNode);
+var
+  tmpNode: TSnailFishNode;
 begin
   if Right = aExplodingNode then
   begin
     if Assigned(Parent) then
-      Parent.UpdateRight(aValue, Self);
-    exit;
+      Parent.UpdateRight(aValue, self);
+    Exit;
   end;
 
   tmpNode := Right;
   while not tmpNode.IsSimpleNode do
     tmpNode := tmpNode.Left;
-  inc(tmpNode.IntValue, aValue);
+  Inc(tmpNode.IntValue, aValue);
 end;
 
-procedure TSnailFishNode.UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
-var tmpNode: TSnailFishNode;
+procedure TSnailFishNode.UpdateLeft(aValue: integer;
+aExplodingNode: TSnailFishNode);
+var
+  tmpNode: TSnailFishNode;
 begin
   if Left = aExplodingNode then
   begin
     if Assigned(Parent) then
-      Parent.UpdateLeft(aValue, Self);
-    exit;
+      Parent.UpdateLeft(aValue, self);
+    Exit;
   end;
 
   tmpNode := Left;
   while not tmpNode.IsSimpleNode do
     tmpNode := tmpNode.Right;
-  inc(tmpNode.IntValue, aValue);
+  Inc(tmpNode.IntValue, aValue);
 end;
 
 function TSnailFishNode.CalcMagnitude: integer;
@@ -1623,17 +1762,20 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay18'}
+
 function TAdventOfCodeDay18.SolveA: Variant;
 var
   i: integer;
   SnailFishNode: TSnailFishNode;
 begin
-  SnailFishNode := TSnailFishNode.create(TSnailFishNode.create((FInput[0])), TSnailFishNode.Create(FInput[1]));
+  SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create((FInput[0])),
+    TSnailFishNode.Create(FInput[1]));
   SnailFishNode.Stabalize;
 
-  for i := 2 to FInput.Count -1 do
+  for i := 2 to FInput.Count - 1 do
   begin
-    SnailFishNode := TSnailFishNode.create(SnailFishNode, TSnailFishNode.create(FInput[i]));
+    SnailFishNode := TSnailFishNode.Create(SnailFishNode,
+      TSnailFishNode.Create(FInput[i]));
     SnailFishNode.Stabalize;
   end;
 
@@ -1643,59 +1785,262 @@ end;
 
 function TAdventOfCodeDay18.SolveB: Variant;
 var
-  i,j: integer;
+  i, j: integer;
   SnailFishNode: TSnailFishNode;
 begin
   Result := 0;
 
-  for i := 0 to FInput.Count -1 do
-    for j := 0 to FInput.Count -1 do
+  for i := 0 to FInput.Count - 1 do
+    for j := 0 to FInput.Count - 1 do
     begin
-      if i=j then
+      if i = j then
         Continue;
 
-      SnailFishNode := TSnailFishNode.create(TSnailFishNode.create(FInput[i]), TSnailFishNode.create(FInput[j]));
+      SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create(FInput[i]),
+        TSnailFishNode.Create(FInput[j]));
       SnailFishNode.Stabalize;
       Result := Max(Result, SnailFishNode.CalcMagnitude);
       SnailFishNode.Free;
     end;
 end;
 {$ENDREGION}
+{$REGION 'TPosition3'}
+class function TPosition3.Create(Const aX, aY, aZ: integer): TPosition3;
+begin
+  Result.x := aX;
+  Result.y := aY;
+  Result.z := aZ;
+end;
 
+class operator TPosition3.Add(a, b: TPosition3): TPosition3;
+begin
+  Result.x := a.x + b.x;
+  Result.y := a.y + b.y;
+  Result.z := a.z + b.z;
+end;
+
+class operator TPosition3.Subtract(a, b: TPosition3): TPosition3;
+begin
+  Result.x := a.x - b.x;
+  Result.y := a.y - b.y;
+  Result.z := a.z - b.z;
+end;
+{$ENDREGION}
+{$REGION 'TScanner'}
+procedure TScanner.AddPoint(const aString: string);
+var
+  Split: TStringDynArray;
+begin
+  Split := SplitString(aString, ',');
+  Points.Add(TPosition3.Create(StrToInt(Split[0]), StrToInt(Split[1]), StrToInt(Split[2])));
+end;
+
+function TScanner.CorrectPosition(const aPosition: TPosition3; aMode: integer): TPosition3;
+begin //Todo refactor
+  case aMode of
+    0:  Result := TPosition3.Create(aPosition.x, aPosition.y, aPosition.z);
+    1:  Result := TPosition3.Create(aPosition.x, aPosition.z, -aPosition.y);
+    2:  Result := TPosition3.Create(aPosition.x, -aPosition.y, -aPosition.z);
+    3:  Result := TPosition3.Create(aPosition.x, -aPosition.z, aPosition.y);
+    4:  Result := TPosition3.Create(aPosition.y, aPosition.x, -aPosition.z);
+    5:  Result := TPosition3.Create(aPosition.y, aPosition.z, aPosition.x);
+    6:  Result := TPosition3.Create(aPosition.y, -aPosition.x, aPosition.z);
+    7:  Result := TPosition3.Create(aPosition.y, -aPosition.z, -aPosition.x);
+    8:  Result := TPosition3.Create(aPosition.z, aPosition.x, aPosition.y);
+    9:  Result := TPosition3.Create(aPosition.z, aPosition.y, -aPosition.x);
+    10: Result := TPosition3.Create(aPosition.z, -aPosition.x, -aPosition.y);
+    11: Result := TPosition3.Create(aPosition.z, -aPosition.y, aPosition.x);
+    12: Result := TPosition3.Create(-aPosition.x, aPosition.y, -aPosition.z);
+    13: Result := TPosition3.Create(-aPosition.x, aPosition.z, aPosition.y);
+    14: Result := TPosition3.Create(-aPosition.x, -aPosition.y, aPosition.z);
+    15: Result := TPosition3.Create(-aPosition.x, -aPosition.z, -aPosition.y);
+    16: Result := TPosition3.Create(-aPosition.y, aPosition.x, aPosition.z);
+    17: Result := TPosition3.Create(-aPosition.y, aPosition.z, -aPosition.x);
+    18: Result := TPosition3.Create(-aPosition.y, -aPosition.x, -aPosition.z);
+    19: Result := TPosition3.Create(-aPosition.y, -aPosition.z, aPosition.x);
+    20: Result := TPosition3.Create(-aPosition.z, aPosition.x, -aPosition.y);
+    21: Result := TPosition3.Create(-aPosition.z, aPosition.y, aPosition.x);
+    22: Result := TPosition3.Create(-aPosition.z, -aPosition.x, aPosition.y);
+    23: Result := TPosition3.Create(-aPosition.z, -aPosition.y, -aPosition.x);
+  end;
+end;
+
+constructor TScanner.Create;
+begin
+  Points := TList<TPosition3>.Create;
+  CorretedPoints := TList<TPosition3>.Create;
+  FinalStartingPoint := TPosition3.Create(0,0,0);
+end;
+
+destructor TScanner.Destroy;
+begin
+  Points.Free;
+  CorretedPoints.Free;
+end;
+
+function TScanner.InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
+Var
+  PossibleStartingPoint, StartingPoint, Beacon, Scan, Corrected, PossibleBeacon : TPosition3;
+  FoundPoints, i, j: integer;
+begin
+  Result := False;
+  for j := 0 to Points.Count -13 do
+  begin
+    PossibleStartingPoint := points[j];
+    for Beacon in aScanner.CorretedPoints do
+    begin
+      Corrected := CorrectPosition(PossibleStartingPoint, aMode);
+      StartingPoint := Beacon - Corrected;
+
+      FoundPoints := 0;
+      for i := 0 to Points.Count -1 do
+      begin
+        Scan := Points[i];
+        Corrected := CorrectPosition(Scan, aMode);
+        PossibleBeacon := StartingPoint + Corrected;
+        if aScanner.CorretedPoints.Contains(PossibleBeacon) then
+          Inc(FoundPoints);
+        if (FoundPoints + Points.count - i) < 12 then
+          Break;
+      end;
+
+      if FoundPoints >= 12 then
+      begin
+        Writeln(Name,':',StartingPoint.x, ',', StartingPoint.y,',',StartingPoint.z, ' matching points ', FoundPoints);
+        for Scan in Points do
+        begin
+          FinalStartingPoint := aScanner.FinalStartingPoint + StartingPoint;
+
+          Corrected := CorrectPosition(Scan, aMode);
+          CorretedPoints.Add(Corrected);
+
+          PossibleBeacon := FinalStartingPoint + Corrected;
+          if not aBeacons.Contains(PossibleBeacon) then
+            aBeacons.Add(PossibleBeacon);
+        end;
+        exit(True);
+      end;
+    end;
+  end;
+end;
+
+function TScanner.MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to 23 do
+    if InternalMapBeacons(aScanner, aBeacons, i) then
+      exit(true);
+end;
+{$ENDREGION}
+{$REGION 'TAdventOfCodeDay19'}
+procedure TAdventOfCodeDay19.BeforeSolve;
+var
+  i, j: integer;
+  Scanner: TScanner;
+  MappedScanners, UnMappedScanners: TList<TScanner>;
+  FoundBeacons: TList<TPosition3>;
+  JustMappedScanners: TQueue<TScanner>;
+begin
+  MappedScanners := TList<TScanner>.Create;
+  UnMappedScanners := TList<TScanner>.Create;
+  JustMappedScanners := TQueue<TScanner>.Create;
+  Scanner := nil;
+  for i := 0 to FInput.Count -1 do
+  begin
+    if FInput[i].StartsWith('---') then
+    begin
+      Scanner := TScanner.Create;
+      Scanner.Name := FInput[i];
+      UnMappedScanners.Add(Scanner);
+    end
+    else if FInput[i] <> '' then
+      Scanner.AddPoint(FInput[i]);
+  end;
+
+  FoundBeacons := TList<TPosition3>.Create(UnMappedScanners[0].Points);
+  MappedScanners.Add(UnMappedScanners[0]);
+  UnMappedScanners.Delete(0);
+  JustMappedScanners.Enqueue(MappedScanners[0]);
+  MappedScanners[0].CorretedPoints.AddRange(MappedScanners[0].Points);
+
+  while UnMappedScanners.Count > 0 do
+  begin
+    Scanner := JustMappedScanners.Dequeue;
+    for i := UnMappedScanners.Count - 1 downto 0 do
+    begin
+      if UnMappedScanners[i].MapBeacons(Scanner, FoundBeacons) then
+      begin
+        MappedScanners.Add(UnMappedScanners[i]);
+        JustMappedScanners.EnQueue(UnMappedScanners[i]);
+        UnMappedScanners.Delete(i);
+      end;
+    end;
+  end;
+
+  BeaconCount := FoundBeacons.Count;
+  BeaconDistance := 0;
+    for i := 0 to MappedScanners.Count -1 do
+      for j := 0 to MappedScanners.Count -1 do
+        BeaconDistance := Max(BeaconDistance,
+          Abs(MappedScanners[i].FinalStartingPoint.x - MappedScanners[j].FinalStartingPoint.x) +
+          Abs(MappedScanners[i].FinalStartingPoint.y - MappedScanners[j].FinalStartingPoint.y) +
+          Abs(MappedScanners[i].FinalStartingPoint.z - MappedScanners[j].FinalStartingPoint.z));
+
+  for scanner in MappedScanners do
+    Scanner.Free;
+  MappedScanners.Free;
+  UnMappedScanners.Free;
+  FoundBeacons.Free;
+  JustMappedScanners.Free;
+end;
+
+function TAdventOfCodeDay19.SolveA: Variant;
+begin
+  Result := BeaconCount
+end;
+
+function TAdventOfCodeDay19.SolveB: Variant;
+begin
+  Result := BeaconDistance;
+end;
+{$ENDREGION}
 {$REGION 'Placeholder'}
 (*
-procedure TAdventOfCodeDay.BeforeSolve;
-begin
+  procedure TAdventOfCodeDay.BeforeSolve;
+  begin
 
-end;
+  end;
 
-procedure TAdventOfCodeDay.AfterSolve;
-begin
+  procedure TAdventOfCodeDay.AfterSolve;
+  begin
 
-end;
+  end;
 
-function TAdventOfCodeDay.SolveA: Variant;
-var
+  function TAdventOfCodeDay.SolveA: Variant;
+  var
   s: string;
   Split: TStringDynArray;
   i: integer;
-begin
+  begin
 
-end;
+  end;
 
-function TAdventOfCodeDay.SolveB: Variant;
-begin
+  function TAdventOfCodeDay.SolveB: Variant;
+  begin
 
-end;
+  end;
 *)
 {$ENDREGION}
 
 initialization
 
-RegisterClasses([
-    TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
-    TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
-    TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
-    TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18]);
+RegisterClasses([TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3,
+  TAdventOfCodeDay4, TAdventOfCodeDay5, TAdventOfCodeDay6, TAdventOfCodeDay7,
+  TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10, TAdventOfCodeDay11,
+  TAdventOfCodeDay12, TAdventOfCodeDay13, TAdventOfCodeDay14,
+  TAdventOfCodeDay15, TAdventOfCodeDay16, TAdventOfCodeDay17,
+  TAdventOfCodeDay18, TAdventOfCodeDay19]);
 
 end.
