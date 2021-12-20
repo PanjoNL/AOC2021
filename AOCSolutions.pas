@@ -220,6 +220,14 @@ type
     procedure BeforeSolve; override;
   end;
 
+  TAdventOfCodeDay20 = class(TAdventOfCode)
+  private
+    function EnhanceImage(Const aRounds: integer):integer;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
     TAdventOfCodeDay = class(TAdventOfCode)
@@ -2006,6 +2014,74 @@ begin
   Result := BeaconDistance;
 end;
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay20'}
+function TAdventOfCodeDay20.EnhanceImage(const aRounds: integer): integer;
+const
+  DeltaY: array [0 .. 8] of integer = (-1, -1, -1, 0, 0, 0, 1, 1, 1);
+  DeltaX: array [0 .. 8] of integer = (-1, 0, 1, -1, 0, 1, -1, 0, 1);
+var
+  EnhancementAlgorithm: array[0..511] of boolean;
+  Round, i, x, y, number, MaxX, MaxY: integer;
+  NewPixels, Pixels, tmp: TDictionary<TPoint, Boolean>;
+  point, CheckPoint: TPoint;
+  IsOn: boolean;
+begin
+  Pixels := TDictionary<TPoint, Boolean>.Create;
+  NewPixels := TDictionary<TPoint,Boolean>.Create;
+
+  for x := 0 to 511 do
+    EnhancementAlgorithm[x] := FInput[0][x+1] = '#';
+
+  for x := 1 to Length(FInput[2]) do
+    for y := 2 to FInput.Count -1 do
+      Pixels.Add(TPoint.Create(x-1,y-2), FInput[y][x] = '#' );
+
+  MaxX := Length(Finput[2])  + 1;
+  MaxY := FInput.Count -2 + 1;
+  for Round := 0 to aRounds -1 do
+  begin
+    for x := -1 - Round*2 to MaxX + Round*2 do
+      for y := -1 - Round*2 to MaxY + Round*2 do
+      begin
+        Point := TPoint.Create(x,y);
+
+        number := 0;
+        for i := 0 to 8 do
+        begin
+          number := number shl 1;
+          CheckPoint := TPoint.Create(Point);
+          CheckPoint.Offset(DeltaX[i], DeltaY[i]);
+          if not Pixels.TryGetValue(CheckPoint, isOn) then
+            IsOn := Odd(Round);
+          if IsOn then
+            number := number + 1;
+        end;
+
+        isOn := EnhancementAlgorithm[Number];
+          NewPixels.AddOrSetValue(Point, IsOn);
+      end;
+
+    tmp := Pixels;
+    Pixels := NewPixels;
+    NewPixels := tmp;
+  end;
+
+  Result := 0;
+  for IsOn in Pixels.Values do
+    if IsOn then
+      Inc(Result);
+end;
+
+function TAdventOfCodeDay20.SolveA: Variant;
+begin
+  Result := EnhanceImage(2);
+end;
+
+function TAdventOfCodeDay20.SolveB: Variant;
+begin
+  Result := EnhanceImage(50);
+end;
+{$ENDREGION}
 {$REGION 'Placeholder'}
 (*
   procedure TAdventOfCodeDay.BeforeSolve;
@@ -2036,11 +2112,10 @@ end;
 
 initialization
 
-RegisterClasses([TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3,
-  TAdventOfCodeDay4, TAdventOfCodeDay5, TAdventOfCodeDay6, TAdventOfCodeDay7,
-  TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10, TAdventOfCodeDay11,
-  TAdventOfCodeDay12, TAdventOfCodeDay13, TAdventOfCodeDay14,
-  TAdventOfCodeDay15, TAdventOfCodeDay16, TAdventOfCodeDay17,
-  TAdventOfCodeDay18, TAdventOfCodeDay19]);
+RegisterClasses([
+  TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
+  TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
+  TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
+  TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20]);
 
 end.
