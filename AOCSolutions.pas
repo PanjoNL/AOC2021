@@ -228,15 +228,21 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay21 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
-    TAdventOfCodeDay = class(TAdventOfCode)
-    protected
+  TAdventOfCodeDay = class(TAdventOfCode)
+  protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
     procedure BeforeSolve; override;
     procedure AfterSolve; override;
-    end;
+  end;
   *)
 {$ENDREGION}
 
@@ -2057,8 +2063,7 @@ begin
             number := number + 1;
         end;
 
-        isOn := EnhancementAlgorithm[Number];
-          NewPixels.AddOrSetValue(Point, IsOn);
+        NewPixels.AddOrSetValue(Point, EnhancementAlgorithm[Number]);
       end;
 
     tmp := Pixels;
@@ -2070,6 +2075,8 @@ begin
   for IsOn in Pixels.Values do
     if IsOn then
       Inc(Result);
+  Pixels.Free;
+  NewPixels.Free;
 end;
 
 function TAdventOfCodeDay20.SolveA: Variant;
@@ -2082,31 +2089,106 @@ begin
   Result := EnhanceImage(50);
 end;
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay21'}
+type GameResult = record P1, P2: int64 end;
+function TAdventOfCodeDay21.SolveA: Variant;
+
+  function _PlayGame(PosP1, PosP2, ScoreP1, ScoreP2, Die, DieRolls: integer): integer;
+  var rslt: GameResult;
+      Position, DieScore, i: Integer;
+      CacheKey: String;
+  begin
+    if ScoreP2 >= 1000 then
+      Exit(ScoreP1*DieRolls);
+
+    DieScore := 3 * Die + 3;
+    if DieScore > 100 then
+      Dec(DieScore, 100);
+
+    Inc(Die, 3);
+    if Die > 100 then
+      Dec(Die, 100);
+
+    Position := PosP1 + DieScore;
+    if Position > 10 then
+      Position := 1 + Position mod 10;
+    Result := _PlayGame(PosP2, Position, ScoreP2, ScoreP1 + Position, Die, DieRolls+3);
+  end;
+
+begin
+  Result := _PlayGame(SplitString(FInput[0], ' ')[4].ToInteger,SplitString(FInput[1], ' ')[4].ToInteger,0,0,1,0);
+end;
+
+function TAdventOfCodeDay21.SolveB: Variant;
+var Cache: TDictionary<String,GameResult>;
+
+  function PlayGame(PosP1, PosP2, ScoreP1, ScoreP2: integer): GameResult;
+  Const DiracDice: Array[3..9] of integer = (1,3,6,7,6,3,1);
+  var rslt: GameResult;
+      Position, i: Integer;
+      CacheKey: String;
+  begin
+    CacheKey := Format('%d|%d|%d|%d', [PosP1, PosP2, ScoreP1, ScoreP2]);
+    if Cache.TryGetValue(CacheKey, Result) then
+      Exit;
+
+    if ScoreP2 >= 21 then
+    begin
+      Result.P1 := 0;
+      Result.P2 := 1;
+      Exit;
+    end;
+
+    Result.P1 := 0;
+    Result.P2 := 0;
+
+    for i := 3 to 9 do
+    begin
+      Position := PosP1 + i;
+      if Position > 10 then
+        Position := Position - 10;
+      rslt := PlayGame(PosP2, Position, ScoreP2, ScoreP1 + Position);
+      Result.P1 := Result.P1 + DiracDice[i] * rslt.P2;
+      Result.P2 := Result.P2 + DiracDice[i] * rslt.P1;
+    end;
+
+    Cache.Add(CacheKey, Result);
+  end;
+
+var Rslt: GameResult;
+begin
+  Cache := TDictionary<String,GameResult>.Create;
+  Rslt := PlayGame(SplitString(FInput[0], ' ')[4].ToInteger,SplitString(FInput[1], ' ')[4].ToInteger,0,0);
+  Result := Max(Rslt.P1,Rslt.P2);
+  Cache.Free;
+end;
+{$ENDREGION}
+
 {$REGION 'Placeholder'}
 (*
-  procedure TAdventOfCodeDay.BeforeSolve;
-  begin
+procedure TAdventOfCodeDay.BeforeSolve;
+begin
 
-  end;
+end;
 
-  procedure TAdventOfCodeDay.AfterSolve;
-  begin
+procedure TAdventOfCodeDay.AfterSolve;
+begin
 
-  end;
+end;
 
-  function TAdventOfCodeDay.SolveA: Variant;
-  var
-  s: string;
-  Split: TStringDynArray;
-  i: integer;
-  begin
+function TAdventOfCodeDay.SolveA: Variant;
+var
+s: string;
+Split: TStringDynArray;
+i: integer;
+begin
 
-  end;
+end;
 
-  function TAdventOfCodeDay.SolveB: Variant;
-  begin
+function TAdventOfCodeDay.SolveB: Variant;
+begin
 
-  end;
+end;
 *)
 {$ENDREGION}
 
@@ -2116,6 +2198,7 @@ RegisterClasses([
   TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
   TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
   TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
-  TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20]);
+  TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20,
+  TAdventOfCodeDay21]);
 
 end.
