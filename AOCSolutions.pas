@@ -190,8 +190,8 @@ type
   end;
 
   TPosition3 = record
-    x, y, z: integer;
-    class function Create(Const aX, aY, aZ: integer): TPosition3; static;
+    x, y, z: int64;
+    class function Create(Const aX, aY, aZ: int64): TPosition3; static;
     class operator Add(a, b: TPosition3): TPosition3;
     class operator Subtract(a, b: TPosition3): TPosition3;
   end;
@@ -229,6 +229,12 @@ type
   end;
 
   TAdventOfCodeDay21 = class(TAdventOfCode)
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
+  TAdventOfCodeDay22 = class(TAdventOfCode)
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
@@ -1614,7 +1620,6 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TSnailFishNode'}
-
 constructor TSnailFishNode.Create(aString: string);
 var
   Json: TJsonValue;
@@ -1819,7 +1824,7 @@ begin
 end;
 {$ENDREGION}
 {$REGION 'TPosition3'}
-class function TPosition3.Create(Const aX, aY, aZ: integer): TPosition3;
+class function TPosition3.Create(Const aX, aY, aZ: int64): TPosition3;
 begin
   Result.x := aX;
   Result.y := aY;
@@ -2094,9 +2099,7 @@ type GameResult = record P1, P2: int64 end;
 function TAdventOfCodeDay21.SolveA: Variant;
 
   function _PlayGame(PosP1, PosP2, ScoreP1, ScoreP2, Die, DieRolls: integer): integer;
-  var rslt: GameResult;
-      Position, DieScore, i: Integer;
-      CacheKey: String;
+  var Position, DieScore: Integer;
   begin
     if ScoreP2 >= 1000 then
       Exit(ScoreP1*DieRolls);
@@ -2163,7 +2166,123 @@ begin
   Cache.Free;
 end;
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay22'}
+function TAdventOfCodeDay22.SolveA: Variant;
+var
+  s: string;
+  Split: TStringDynArray;
+  Points: TDictionary<TPosition3, Integer>;
+  X,Y,Z: integer;
+begin
+  Points := TDictionary<TPosition3, integer>.Create;
+  for s in FInput do
+  begin
+    Split := SplitString(s.Replace('=', ' ', [rfReplaceAll]).Replace('..', ' ', [rfReplaceAll]).Replace(',', ' ', [rfReplaceAll]), ' ');
+    for X := Max(StrToInt(Split[2]), -50) to Min(StrToInt(Split[3]), 50) do
+      for Y := Max(StrToInt(Split[5]), -50) to Min(StrToInt(Split[6]), 50) do
+        for Z := Max(StrToInt(Split[8]), -50) to Min(StrToInt(Split[9]), 50) do
+          if SameText(split[0], 'on') then
+            Points.AddOrSetValue(TPosition3.Create(X,Y,Z), 0)
+          else
+            Points.Remove(TPosition3.Create(X,Y,Z));
+  end;
 
+  Result := Points.Count;
+  Points.Free;
+end;
+
+type TCoordinaat = (cX, cY, cZ);
+Type TCuboid = record
+  Top, Bottom: Array[TCoordinaat] of int64;
+  IsOn: boolean;
+
+  Class function Create(aMinX, aMaxX, aMinY, aMaxY, aMinZ, aMaxZ: integer; aIsOn: Boolean): TCuboid; static;
+end;
+
+class function TCuboid.Create(aMinX, aMaxX, aMinY, aMaxY, aMinZ, aMaxZ: integer; aIsOn: Boolean): TCuboid;
+begin
+  Result.Top[cX] := aMinX;
+  Result.Top[cY] := aMinY;
+  Result.Top[cZ] := aMinZ;
+
+  Result.Bottom[cX] := aMaxX;
+  Result.Bottom[cY] := aMaxY;
+  Result.Bottom[cZ] := aMaxZ;
+
+  Result.IsOn := aIsOn;
+end;
+
+function TAdventOfCodeDay22.SolveB: Variant;
+
+  function _NoOverlap(a,b: TCuboid): Boolean;
+  var Coord: TCoordinaat;
+  begin
+    Result := False;
+    for Coord := Low(TCoordinaat) to High(TCoordinaat) do
+      if (a.Top[Coord] > b.Bottom[Coord]) or (a.Bottom [Coord]< b.Top[Coord]) then
+        Exit(True);
+  end;
+
+var
+  Cubes: TList<TCuboid>;
+  s: string;
+  Split: TStringDynArray;
+  i: integer;
+  Current: Int64;
+  CreatedCube, OverlappingCube, NewCube: TCuboid;
+  Coord: TCoordinaat;
+begin
+  Cubes := TList<TCuboid>.Create;
+
+  for s in FInput do
+  begin
+    Split := SplitString(s.Replace('=', ' ', [rfReplaceAll]).Replace('..', ' ', [rfReplaceAll]).Replace(',', ' ', [rfReplaceAll]), ' ');
+
+    CreatedCube := TCuboid.Create(Split[2].ToInteger, Split[3].ToInteger, Split[5].ToInteger,
+      Split[6].ToInteger, Split[8].ToInteger, Split[9].ToInteger, SameText(split[0], 'on'));
+
+    for i := Cubes.Count -1 downto 0 do
+    begin
+      if _NoOverlap(Cubes[i], CreatedCube) then
+        Continue;
+
+      OverlappingCube := Cubes.ExtractAt(i);
+      for Coord := Low(TCoordinaat) to High(TCoordinaat) do
+      begin
+        if CreatedCube.Bottom[Coord] < OverlappingCube.bottom[Coord] then
+        begin
+          NewCube := OverlappingCube;
+          NewCube.top[Coord] := CreatedCube.Bottom[Coord]+1;
+          OverlappingCube.Bottom[Coord] := CreatedCube.Bottom[Coord];
+          Cubes.Add(NewCube);
+        end;
+
+        if CreatedCube.Top[Coord] > OverlappingCube.Top[Coord] then
+        begin
+          NewCube := OverlappingCube;
+          NewCube.bottom[Coord] := CreatedCube.top[Coord]-1;
+          OverlappingCube.Top[Coord] := CreatedCube.Top[Coord];
+          Cubes.Add(NewCube);
+        end;
+      end;
+    end;
+
+    if CreatedCube.IsOn then
+      Cubes.Add(CreatedCube);
+  end;
+
+  Result := 0;
+  for CreatedCube in Cubes do
+  begin
+    Current := 1;
+    for Coord := Low(TCoordinaat) to High(TCoordinaat) do
+      Current := Current * (CreatedCube.Bottom[Coord] - CreatedCube.Top[Coord]+1);
+    Result := Result + Current;
+  end;
+  Cubes.Free;
+end;
+
+{$ENDREGION}
 {$REGION 'Placeholder'}
 (*
 procedure TAdventOfCodeDay.BeforeSolve;
@@ -2192,6 +2311,7 @@ end;
 *)
 {$ENDREGION}
 
+
 initialization
 
 RegisterClasses([
@@ -2199,6 +2319,6 @@ RegisterClasses([
   TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
   TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
   TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20,
-  TAdventOfCodeDay21]);
+  TAdventOfCodeDay21,TAdventOfCodeDay22]);
 
 end.
