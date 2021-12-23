@@ -240,6 +240,24 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAmphipod = (A,B,C,D,None);
+  TAmphipodWork = record
+    Rooms: Array[TAmphipod] of Array[0..3] of TAmphipod;
+    HallWay: Array[0..10] of TAmphipod;
+    Engergy: Integer;
+    Path: string; //For debuging
+    function AsString: string;
+  end;
+
+  TAdventOfCodeDay23 = class(TAdventOfCode)
+  private
+    function CalculateEngergyCost(InstructionFolded: Boolean): integer;
+    procedure DumpPath(aPath: string);
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -2283,6 +2301,287 @@ begin
 end;
 
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay23'}
+function TAmphipodWork.AsString: string;
+
+  procedure Add(aInt: integer);
+  var i: Integer;
+  begin
+    Result := Result + '_';
+    Result := Result + Ord(Rooms[A][aInt]).ToString;
+    Result := Result + Ord(Rooms[B][aInt]).ToString;
+    Result := Result + Ord(Rooms[C][aInt]).ToString;
+    Result := Result + Ord(Rooms[D][aInt]).ToString;
+
+  end;
+
+var i: integer;
+begin
+  Result := '';
+  for i := 0 to 10 do
+    Result := Result + Ord(HallWay[i]).ToString;
+  Add(0);
+  Add(1);
+  Add(2);
+  Add(3);
+
+  Result := Result + '_' ;
+  Result := Result + Engergy.ToString;
+end;
+
+procedure TAdventOfCodeDay23.DumpPath(aPath: string);
+
+  procedure _Line(aPrefix, aLine, aSuffix: string);
+  begin
+    WriteLN(aPrefix, aLine[1], '#', aLine[2], '#', aLine[3], '#', aLine[4], aSuffix);
+  end;
+
+Var split, Split2: TStringDynArray;
+    i: integer;
+    s: string;
+begin
+  split := SplitString(aPath, '|');
+  for i := 1 to Length(split)-1 do
+  begin
+    Writeln('');
+    s := split[i];
+    S := s.Replace(Ord(A).ToString, 'A', [rfReplaceAll]);
+    S := s.Replace(Ord(B).ToString, 'B', [rfReplaceAll]);
+    S := s.Replace(Ord(C).ToString, 'C', [rfReplaceAll]);
+    S := s.Replace(Ord(D).ToString, 'D', [rfReplaceAll]);
+    S := s.Replace(Ord(None).ToString, '.', [rfReplaceAll]);
+    split2 := SplitString(s, '_');
+
+    Writeln('#############');
+    Writeln('#', Split2[0], '#');
+    _Line('###', Split2[1], '###' );
+    _Line('  #', Split2[2], '#  ' );
+    _Line('  #', Split2[3], '#  ' );
+    _Line('  #', Split2[4], '#  ' );
+    Writeln('  #########  ');
+    WriteLn('energy: ', Split2[5]);
+  end;
+end;
+
+function TAdventOfCodeDay23.SolveA: Variant;
+begin
+  Result := CalculateEngergyCost(True);
+end;
+
+function TAdventOfCodeDay23.SolveB: Variant;
+begin
+  Result := CalculateEngergyCost(False);
+end;
+
+function TAdventOfCodeDay23.CalculateEngergyCost(InstructionFolded: Boolean): integer;
+const DebugPath: boolean = False;
+var RoomDepth: integer;
+
+  procedure SetArray(var AArray: array of TAmphipod; p1, p2, p3, p4: TAmphipod);
+  begin
+    if InstructionFolded then
+    begin
+      AArray[0] := p1;
+      AArray[1] := p4;
+      AArray[2] := none;
+      AArray[3] := none;
+    end
+    else
+    begin
+      AArray[0] := p1;
+      AArray[1] := p2;
+      AArray[2] := p3;
+      AArray[3] := p4;
+    end;
+  end;
+
+  function RoomOk(var AArray: array of TAmphipod; aChar: TAmphipod): boolean;
+  var i: integer;
+  begin
+    Result := True;
+    for i := 0 to RoomDepth-1 do
+      if (AArray[i] <> None) and (AArray[i] <> aChar) then
+        Exit(False);
+  end;
+
+  function _TopAmphipod(var AArray: array of TAmphipod; out aDepth: integer): TAmphipod;
+  var i: integer;
+  begin
+    Result := None;
+    for i := 0 to RoomDepth-1 do
+      if (AArray[i] <> None) then
+      begin
+        Result := AArray[i];
+        aDepth := i;
+        Exit;
+      end;
+  end;
+
+  function _Depth(AArray: array of TAmphipod): integer;
+  var i: integer;
+  begin
+    Result := -99;
+    for i := RoomDepth-1 downto 0 do
+      if AArray[i] = None then
+        Exit(i);
+  end;
+
+  function EnergyCost(aChar: TAmphipod): integer;
+  begin
+    Result := -1;
+    case aChar of
+      A: Result := 1;
+      B: Result := 10;
+      C: Result := 100;
+      D: Result := 1000;
+    end;
+  end;
+
+  function _HallWayIndex(Const aChar: TAmphipod): integer;
+  begin
+    Result := -1;
+    case aChar of
+      A: Result := 2;
+      B: Result := 4;
+      C: Result := 6;
+      D: Result := 8;
+    end;
+  end;
+
+  function StrToAmphipod(Const aStr: string): TAmphipod;
+  begin
+    case IndexStr(aStr, ['A','B','C','D']) of
+      0: Result := A;
+      1: Result := B;
+      2: Result := C;
+      3: Result := D;
+    else
+      Result := None;
+    end;
+  end;
+
+  function HallWayClear(aHallway: Array of TAmphipod; aFrom, aTo: integer): boolean;
+  var i: integer;
+  begin
+    Result := True;
+    for i := aFrom to aTo do
+      if aHallWay[i] <> None then
+        Exit(False);
+  end;
+
+var CurrentWork, NewWork: TAmphipodWork;
+    Comparer: IComparer<TAmphipodWork>;
+    Queue: PriorityQueue<TAmphipodWork>;
+    Depth, i, HallWayIndex, QueueSize: Integer;
+    Seen: TDictionary<String, Boolean>;
+    TopAmphipod, CurrentAmphipod: TAmphipod;
+begin
+  RoomDepth := 4;
+  if InstructionFolded then
+    RoomDepth := 2;
+  NewWork.Engergy := 0;
+  SetArray(NewWork.Rooms[A], StrToAmphipod(FInput[2][4]), D, D, StrToAmphipod(FInput[3][4]));
+  SetArray(NewWork.Rooms[B], StrToAmphipod(FInput[2][6]), C, B, StrToAmphipod(FInput[3][6]));
+  SetArray(NewWork.Rooms[C], StrToAmphipod(FInput[2][8]), B, A, StrToAmphipod(FInput[3][8]));
+  SetArray(NewWork.Rooms[D], StrToAmphipod(FInput[2][10]),A, C, StrToAmphipod(FInput[3][10]));
+  for i := 0 to 10 do
+    NewWork.HallWay[i] := None;
+
+  Comparer := TComparer<TAmphipodWork>.Construct(
+    function(const Left, Right: TAmphipodWork): integer
+    begin
+      Result := Sign(Left.Engergy - Right.Engergy);
+    end);
+
+  if DebugPath then
+    NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
+  Queue := PriorityQueue<TAmphipodWork>.Create(Comparer, Comparer);
+  Queue.Enqueue(NewWork);
+  Seen := TDictionary<string, boolean>.Create;;
+
+  while Queue.Count > 0 do
+  begin
+    CurrentWork := Queue.Dequeue;
+    if Seen.ContainsKey(CurrentWork.AsString) then
+      Continue;
+    Seen.Add(CurrentWork.AsString, true);
+    QueueSize := Queue.Count;
+
+    for i := 0 to 10 do  //Check HallWay;
+    begin
+      CurrentAmphipod := CurrentWork.HallWay[i];
+      if (CurrentAmphipod = None) or (not RoomOk(CurrentWork.Rooms[CurrentAmphipod], CurrentAmphipod))  then
+        Continue; //Nothing here or room is occupied
+
+      HallWayIndex := _HallWayIndex(CurrentAmphipod);
+      if not HallWayClear(CurrentWork.HallWay, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1) ) then
+        continue;
+
+      // Can reach it!
+      NewWork := CurrentWork;
+      Depth := _Depth(CurrentWork.Rooms[CurrentWork.HallWay[i]]);
+      NewWork.Rooms[CurrentAmphipod][Depth] := CurrentAmphipod;
+      NewWork.HallWay[i] := None;
+      NewWork.Engergy := NewWork.Engergy + EnergyCost(CurrentWork.HallWay[i])  * (Depth + 1 + Max(HallWayIndex, i) -  Min(HallWayIndex, i));
+      if DebugPath then
+        NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
+      Queue.Enqueue(NewWork);
+    end;
+
+    for CurrentAmphipod := low(TAmphipod) to High(TAmphipod) do // Check rooms
+    begin
+      if (CurrentAmphipod = none) or RoomOk(CurrentWork.Rooms[CurrentAmphipod], CurrentAmphipod) then
+        Continue;
+
+      TopAmphipod := _TopAmphipod(CurrentWork.Rooms[CurrentAmphipod], Depth);
+      HallWayIndex := _HallWayIndex(CurrentAmphipod);
+
+      for i := HallWayIndex downto 0 do // Check left
+      begin
+        if i in [2,4,6,8] then // Entrance
+          continue;
+
+        if CurrentWork.Hallway[i] <> None then
+          break; //Found block;
+
+        NewWork := CurrentWork;
+        NewWork.Engergy := NewWork.Engergy + EnergyCost(TopAmphipod)* (Depth +1 - i + _HallWayIndex(CurrentAmphipod));
+        NewWork.Rooms[CurrentAmphipod][Depth] := None;
+        NewWork.HallWay[i] := TopAmphipod;
+        if DebugPath then
+          NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
+        Queue.Enqueue(NewWork);
+      end;
+
+      for i := HallWayIndex to 10 do //Check right;
+      begin
+        if i in [2,4,6,8] then // Entrance
+          continue;
+
+        if CurrentWork.Hallway[i] <> None then
+          break; //Found block;
+
+        NewWork := CurrentWork;
+        NewWork.Rooms[CurrentAmphipod][Depth] := None;
+        NewWork.Engergy := NewWork.Engergy + EnergyCost(TopAmphipod) * (Depth + 1 + i - _HallWayIndex(CurrentAmphipod));
+        NewWork.HallWay[i] := TopAmphipod;
+        if DebugPath then
+          NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
+        Queue.Enqueue(NewWork);
+      end;
+    end;
+
+    if (QueueSize = Queue.Count) and HallWayClear(CurrentWork.HallWay, 0, 10) then
+    begin
+      if DebugPath then
+        DumpPath(CurrentWork.Path);
+
+      Exit(CurrentWork.Engergy);
+    end;
+  end;
+end;
+{$ENDREGION}
+
 {$REGION 'Placeholder'}
 (*
 procedure TAdventOfCodeDay.BeforeSolve;
@@ -2311,7 +2610,6 @@ end;
 *)
 {$ENDREGION}
 
-
 initialization
 
 RegisterClasses([
@@ -2319,6 +2617,6 @@ RegisterClasses([
   TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
   TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
   TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20,
-  TAdventOfCodeDay21,TAdventOfCodeDay22]);
+  TAdventOfCodeDay21,TAdventOfCodeDay22,TAdventOfCodeDay23 ]);
 
 end.

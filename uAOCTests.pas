@@ -39,8 +39,8 @@ Const AOCTestData: array[0..21] of AOCTest =
  (AOCClass: TAdventOfCodeDay19; ExpectedSolutionA: '432'; ExpectedSolutionB: '14414'),
  (AOCClass: TAdventOfCodeDay20; ExpectedSolutionA: '5461'; ExpectedSolutionB: '18226'),
  (AOCClass: TAdventOfCodeDay21; ExpectedSolutionA: '678468'; ExpectedSolutionB: '131180774190079'),
- (AOCClass: TAdventOfCodeDay22; ExpectedSolutionA: '598616'; ExpectedSolutionB: '1193043154475246')
-
+ (AOCClass: TAdventOfCodeDay22; ExpectedSolutionA: '598616'; ExpectedSolutionB: '1193043154475246'),
+ (AOCClass: TAdventOfCodeDay23; ExpectedSolutionA: '15516'; ExpectedSolutionB: '45272')
 );
 
 implementation
