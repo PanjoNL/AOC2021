@@ -258,6 +258,14 @@ type
     function SolveB: Variant; override;
   end;
 
+  TAdventOfCodeDay24 = class(TAdventOfCode)
+  private
+    function CalcMONAD(const aMaxResult: Boolean): Extended ;
+  protected
+    function SolveA: Variant; override;
+    function SolveB: Variant; override;
+  end;
+
 {$REGION 'placeholder'}
   (*
   TAdventOfCodeDay = class(TAdventOfCode)
@@ -2359,6 +2367,7 @@ begin
     _Line('  #', Split2[3], '#  ' );
     _Line('  #', Split2[4], '#  ' );
     Writeln('  #########  ');
+    split2 := SplitString(split[i], '_');
     WriteLn('energy: ', Split2[5]);
   end;
 end;
@@ -2581,6 +2590,63 @@ begin
   end;
 end;
 {$ENDREGION}
+{$REGION 'TAdventOfCodeDay24'}
+function TAdventOfCodeDay24.SolveA: Variant;
+begin
+  Result := CalcMONAD(True);
+end;
+
+function TAdventOfCodeDay24.SolveB: Variant;
+begin
+  Result := CalcMONAD(False);
+end;
+
+function TAdventOfCodeDay24.CalcMONAD(const aMaxResult: Boolean): Extended ;
+
+  function _Value(Const LineNumber: integer): int64;
+  begin
+    Result := StrToInt64(SplitString(FInput[LineNumber], ' ')[2])
+  end;
+
+var
+  i, j, Val1, Val2, Val3, Sum, Base: int64;
+  Stack: TStack<int64>;
+begin
+  Stack := TStack<int64>.Create;
+  Result := 0;
+  Base := 1;
+  if aMaxResult then
+    Base := 9;
+
+  for i := 0 to 13 do
+  begin
+    Val1 := _Value(i * 18 + 4);
+    Val2 := _Value(i * 18 + 5);
+    Val3 := _Value(i * 18 + 15);
+
+    if Val1 = 1 then
+      Stack.Push(i shl 32 + Val3)
+    else
+    begin
+      j := Stack.Peek shr 32;
+      val3 := Stack.Pop and MaxInt;
+      Sum := Val3 + Val2;
+      if ((Sum <= 0) and aMaxResult) or ((Sum >= 0) and not aMaxResult)then
+      begin
+        Result := Result + Base * Power(10, (13-j));
+        Result := Result + (Base + Sum) * Power(10, (13-i))
+      end
+      else
+      begin
+        Result := Result + (Base - Sum) * Power(10, (13-j));
+        Result := Result + Base * Power(10, (13-i))
+      end;
+    end;
+  end;
+  Stack.Free;
+end;
+{$ENDREGION}
+
 
 {$REGION 'Placeholder'}
 (*
@@ -2610,13 +2676,15 @@ end;
 *)
 {$ENDREGION}
 
+{ TNumPair }
+
 initialization
 
 RegisterClasses([
   TAdventOfCodeDay1, TAdventOfCodeDay2, TAdventOfCodeDay3, TAdventOfCodeDay4, TAdventOfCodeDay5,
   TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
   TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
-  TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18, TAdventOfCodeDay19,TAdventOfCodeDay20,
-  TAdventOfCodeDay21,TAdventOfCodeDay22,TAdventOfCodeDay23 ]);
+  TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18,TAdventOfCodeDay19,TAdventOfCodeDay20,
+  TAdventOfCodeDay21,TAdventOfCodeDay22,TAdventOfCodeDay23,TAdventOfCodeDay24 ]);
 
 end.
