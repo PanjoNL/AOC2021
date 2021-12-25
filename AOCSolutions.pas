@@ -266,17 +266,11 @@ type
     function SolveB: Variant; override;
   end;
 
-{$REGION 'placeholder'}
-  (*
-  TAdventOfCodeDay = class(TAdventOfCode)
+  TAdventOfCodeDay25 = class(TAdventOfCode)
   protected
     function SolveA: Variant; override;
     function SolveB: Variant; override;
-    procedure BeforeSolve; override;
-    procedure AfterSolve; override;
   end;
-  *)
-{$ENDREGION}
 
 implementation
 
@@ -2313,7 +2307,6 @@ end;
 function TAmphipodWork.AsString: string;
 
   procedure Add(aInt: integer);
-  var i: Integer;
   begin
     Result := Result + '_';
     Result := Result + Ord(Rooms[A][aInt]).ToString;
@@ -2485,6 +2478,7 @@ var CurrentWork, NewWork: TAmphipodWork;
     Seen: TDictionary<String, Boolean>;
     TopAmphipod, CurrentAmphipod: TAmphipod;
 begin
+  Result := 0;
   RoomDepth := 4;
   if InstructionFolded then
     RoomDepth := 2;
@@ -2646,37 +2640,82 @@ begin
   Stack.Free;
 end;
 {$ENDREGION}
-
-
-{$REGION 'Placeholder'}
-(*
-procedure TAdventOfCodeDay.BeforeSolve;
-begin
-
-end;
-
-procedure TAdventOfCodeDay.AfterSolve;
-begin
-
-end;
-
-function TAdventOfCodeDay.SolveA: Variant;
+{$REGION 'TAdventOfCodeDay25'}
+function TAdventOfCodeDay25.SolveA: Variant;
 var
-s: string;
-Split: TStringDynArray;
-i: integer;
-begin
+  x, y, MapWidth, MapHeight: integer;
+  Map: TDictionary<TPoint,Boolean>;
+  Moving: Boolean;
 
+  function _Move(aEast: Boolean): boolean;
+  var
+    Changes: TDictionary<TPoint, TPoint>;
+    CurrentPoint, NewPoint: TPoint;
+  begin
+    Changes := TDictionary<TPoint, TPoint>.Create;
+    for CurrentPoint in Map.Keys do
+    begin
+      if Map[CurrentPoint] <> aEast then
+        Continue;
+
+      NewPoint := TPoint.Create(CurrentPoint);
+      if aEast then
+      begin
+        NewPoint.X := NewPoint.X + 1;
+        if NewPoint.X > MapWidth then
+          NewPoint.X := 0;
+      end
+      else
+      begin
+        NewPoint.Y := NewPoint.Y + 1;
+        if NewPoint.Y > MapHeight then
+          NewPoint.Y := 0;
+      end;
+
+      if not Map.ContainsKey(NewPoint) then
+        Changes.Add(CurrentPoint, NewPoint);
+    end;
+
+    Result := Changes.Count > 0;
+    for CurrentPoint in Changes.Keys do
+    begin
+      Map.Remove(CurrentPoint);
+      Map.Add(Changes[CurrentPoint], aEast);
+    end;
+    Changes.Free;
+  end;
+
+
+begin
+  Map :=  TDictionary<TPoint,Boolean>.Create;
+
+  MapWidth := Length(FInput[0]) -1;
+  MapHeight := FInput.Count -1;
+
+  for x := 0 to MapWidth do
+    for y := 0 to MapHeight do
+      if FInput[y][x+1] <> '.' then
+        Map.Add(TPoint.Create(x,y), FInput[y][x+1] = '>');
+
+  Result := 0;
+  Moving := True;
+  while Moving do
+  begin
+    Result := Result + 1;
+
+    Moving := _Move(True);
+    if _Move(False) then
+      Moving := True;
+  end;
+
+  Map.Free;
 end;
 
-function TAdventOfCodeDay.SolveB: Variant;
+function TAdventOfCodeDay25.SolveB: Variant;
 begin
-
+  //
 end;
-*)
 {$ENDREGION}
-
-{ TNumPair }
 
 initialization
 
@@ -2685,6 +2724,6 @@ RegisterClasses([
   TAdventOfCodeDay6, TAdventOfCodeDay7, TAdventOfCodeDay8, TAdventOfCodeDay9, TAdventOfCodeDay10,
   TAdventOfCodeDay11,TAdventOfCodeDay12,TAdventOfCodeDay13,TAdventOfCodeDay14,TAdventOfCodeDay15,
   TAdventOfCodeDay16,TAdventOfCodeDay17,TAdventOfCodeDay18,TAdventOfCodeDay19,TAdventOfCodeDay20,
-  TAdventOfCodeDay21,TAdventOfCodeDay22,TAdventOfCodeDay23,TAdventOfCodeDay24 ]);
+  TAdventOfCodeDay21,TAdventOfCodeDay22,TAdventOfCodeDay23,TAdventOfCodeDay24,TAdventOfCodeDay25]);
 
 end.
