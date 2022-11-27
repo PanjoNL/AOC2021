@@ -170,8 +170,8 @@ type
     function Explode(aDepth: integer): Boolean;
     function Split: Boolean;
     function IsSimpleNode: Boolean;
-    procedure UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
-    procedure UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
+    function GetNode(aLeft: Boolean): TSnailFishNode;
+    procedure UpdateAfterExplosion(aValue: Integer; aExplodingNode: TSnailFishNode; aLeft: Boolean);
   public
     Constructor Create(aString: string); overload;
     Constructor Create(aParent: TSnailFishNode; aJson: TJsonValue); overload;
@@ -194,13 +194,15 @@ type
     class function Create(Const aX, aY, aZ: int64): TPosition3; static;
     class operator Add(a, b: TPosition3): TPosition3;
     class operator Subtract(a, b: TPosition3): TPosition3;
+    function ManhatenDistance(Other: TPosition3): int64;
   end;
 
   TScanner = class
   private
-    function CorrectPosition(Const aPosition: TPosition3; aMode: integer): TPosition3;
+    function CorrectPosition(Const aPosition: TPosition3; aOrientation: integer): TPosition3;
   public
     Points, CorretedPoints: TList<TPosition3>;
+    Distances: TList<Int64>;
     FinalStartingPoint: TPosition3;
     Name: String;
     constructor Create(); overload;
@@ -208,7 +210,6 @@ type
 
     procedure AddPoint(Const aString: string);
     function MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
-    function InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
   end;
 
   TAdventOfCodeDay19 = class(TAdventOfCode)
@@ -1694,8 +1695,8 @@ begin
   begin
     if aDepth >= 4 then
     begin
-      Parent.UpdateLeft(Left.IntValue, self);
-      Parent.UpdateRight(Right.IntValue, self);
+      Parent.UpdateAfterExplosion(Left.IntValue, Self, True);
+      Parent.UpdateAfterExplosion(Right.IntValue, Self, False);
       FreeAndNil(Left);
       FreeAndNil(Right);
       IntValue := 0;
@@ -1715,6 +1716,14 @@ begin
     Result := Right.Explode(aDepth + 1);
 end;
 
+function TSnailFishNode.GetNode(aLeft: Boolean): TSnailFishNode;
+begin
+  if aLeft then
+    result := Self.Left
+  else
+    Result := Self.Right;
+end;
+
 function TSnailFishNode.IsSimpleNode: Boolean;
 begin
   Result := not(Assigned(Left) or Assigned(Right))
@@ -1730,7 +1739,7 @@ begin
       Result := True;
       Left := TSnailFishNode.Create(self, Trunc(IntValue / 2));
       Right := TSnailFishNode.Create(self, Ceil(IntValue / 2));
-      IntValue := -1;
+      Self.IntValue := -1;
     end;
 
     Exit;
@@ -1739,6 +1748,7 @@ begin
   Result := Left.Split;
   if Result then
     Exit;
+
   Result := Right.Split;
 end;
 
@@ -1756,39 +1766,24 @@ begin
   end;
 end;
 
-procedure TSnailFishNode.UpdateRight(aValue: integer;
-aExplodingNode: TSnailFishNode);
+procedure TSnailFishNode.UpdateAfterExplosion(aValue: Integer; aExplodingNode: TSnailFishNode; aLeft: Boolean);
 var
   tmpNode: TSnailFishNode;
 begin
-  if Right = aExplodingNode then
+  // Select the exploding child
+  tmpNode := GetNode(aLeft);
+
+  // Walk up the tree until we find the non exploding root of this number
+  if tmpNode = aExplodingNode then
   begin
     if Assigned(Parent) then
-      Parent.UpdateRight(aValue, self);
+      Parent.UpdateAfterExplosion(aValue, self, aLeft);
     Exit;
   end;
 
-  tmpNode := Right;
+  // Walk down until we find a simple node to update
   while not tmpNode.IsSimpleNode do
-    tmpNode := tmpNode.Left;
-  Inc(tmpNode.IntValue, aValue);
-end;
-
-procedure TSnailFishNode.UpdateLeft(aValue: integer;
-aExplodingNode: TSnailFishNode);
-var
-  tmpNode: TSnailFishNode;
-begin
-  if Left = aExplodingNode then
-  begin
-    if Assigned(Parent) then
-      Parent.UpdateLeft(aValue, self);
-    Exit;
-  end;
-
-  tmpNode := Left;
-  while not tmpNode.IsSimpleNode do
-    tmpNode := tmpNode.Right;
+    tmpNode := tmpNode.GetNode(not aLeft);
   Inc(tmpNode.IntValue, aValue);
 end;
 
@@ -1807,14 +1802,12 @@ var
   i: integer;
   SnailFishNode: TSnailFishNode;
 begin
-  SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create((FInput[0])),
-    TSnailFishNode.Create(FInput[1]));
+  SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create((FInput[0])), TSnailFishNode.Create(FInput[1]));
   SnailFishNode.Stabalize;
 
   for i := 2 to FInput.Count - 1 do
   begin
-    SnailFishNode := TSnailFishNode.Create(SnailFishNode,
-      TSnailFishNode.Create(FInput[i]));
+    SnailFishNode := TSnailFishNode.Create(SnailFishNode, TSnailFishNode.Create(FInput[i]));
     SnailFishNode.Stabalize;
   end;
 
@@ -1835,8 +1828,7 @@ begin
       if i = j then
         Continue;
 
-      SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create(FInput[i]),
-        TSnailFishNode.Create(FInput[j]));
+      SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create(FInput[i]), TSnailFishNode.Create(FInput[j]));
       SnailFishNode.Stabalize;
       Result := Max(Result, SnailFishNode.CalcMagnitude);
       SnailFishNode.Free;
@@ -1849,6 +1841,14 @@ begin
   Result.x := aX;
   Result.y := aY;
   Result.z := aZ;
+end;
+
+function TPosition3.ManhatenDistance(Other: TPosition3): int64;
+begin
+  Result :=
+    Abs(Other.x - Self.x) +
+    Abs(Other.y - Self.y) +
+    Abs(Other.z - Self.z);
 end;
 
 class operator TPosition3.Add(a, b: TPosition3): TPosition3;
@@ -1869,14 +1869,20 @@ end;
 procedure TScanner.AddPoint(const aString: string);
 var
   Split: TStringDynArray;
+  Position, Other: TPosition3;
 begin
   Split := SplitString(aString, ',');
-  Points.Add(TPosition3.Create(StrToInt(Split[0]), StrToInt(Split[1]), StrToInt(Split[2])));
+  Position := TPosition3.Create(StrToInt(Split[0]), StrToInt(Split[1]), StrToInt(Split[2]));
+
+  for Other in Points do
+      Distances.Add(Position.ManhatenDistance(Other));
+
+  Points.Add(Position);
 end;
 
-function TScanner.CorrectPosition(const aPosition: TPosition3; aMode: integer): TPosition3;
+function TScanner.CorrectPosition(const aPosition: TPosition3; aOrientation: integer): TPosition3;
 begin //Todo refactor
-  case aMode of
+  case aOrientation of
     0:  Result := TPosition3.Create(aPosition.x, aPosition.y, aPosition.z);
     1:  Result := TPosition3.Create(aPosition.x, aPosition.z, -aPosition.y);
     2:  Result := TPosition3.Create(aPosition.x, -aPosition.y, -aPosition.z);
@@ -1908,6 +1914,7 @@ constructor TScanner.Create;
 begin
   Points := TList<TPosition3>.Create;
   CorretedPoints := TList<TPosition3>.Create;
+  Distances := TList<Int64>.Create;
   FinalStartingPoint := TPosition3.Create(0,0,0);
 end;
 
@@ -1915,62 +1922,61 @@ destructor TScanner.Destroy;
 begin
   Points.Free;
   CorretedPoints.Free;
-end;
-
-function TScanner.InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
-Var
-  PossibleStartingPoint, StartingPoint, Beacon, Scan, Corrected, PossibleBeacon : TPosition3;
-  FoundPoints, i, j: integer;
-begin
-  Result := False;
-  for j := 0 to Points.Count -13 do
-  begin
-    PossibleStartingPoint := points[j];
-    for Beacon in aScanner.CorretedPoints do
-    begin
-      Corrected := CorrectPosition(PossibleStartingPoint, aMode);
-      StartingPoint := Beacon - Corrected;
-
-      FoundPoints := 0;
-      for i := 0 to Points.Count -1 do
-      begin
-        Scan := Points[i];
-        Corrected := CorrectPosition(Scan, aMode);
-        PossibleBeacon := StartingPoint + Corrected;
-        if aScanner.CorretedPoints.Contains(PossibleBeacon) then
-          Inc(FoundPoints);
-        if (FoundPoints + Points.count - i) < 12 then
-          Break;
-      end;
-
-      if FoundPoints >= 12 then
-      begin
-        Writeln(Name,':',StartingPoint.x, ',', StartingPoint.y,',',StartingPoint.z, ' matching points ', FoundPoints);
-        for Scan in Points do
-        begin
-          FinalStartingPoint := aScanner.FinalStartingPoint + StartingPoint;
-
-          Corrected := CorrectPosition(Scan, aMode);
-          CorretedPoints.Add(Corrected);
-
-          PossibleBeacon := FinalStartingPoint + Corrected;
-          if not aBeacons.Contains(PossibleBeacon) then
-            aBeacons.Add(PossibleBeacon);
-        end;
-        exit(True);
-      end;
-    end;
-  end;
+  Distances.Free;
 end;
 
 function TScanner.MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
-var
-  i: Integer;
+Var
+  PossibleScannerPosition, Beacon, Scan, Corrected, PossibleBeacon : TPosition3;
+  FoundPoints, i, j, Orientation: integer;
+  Distance: Int64;
 begin
   Result := False;
-  for i := 0 to 23 do
-    if InternalMapBeacons(aScanner, aBeacons, i) then
-      exit(true);
+
+  FoundPoints := 0;
+  for Distance in aScanner.Distances do
+    if Self.Distances.Contains(Distance) then
+      Inc(FoundPoints);
+
+  if FoundPoints < 66 then
+    Exit;
+
+  for Orientation := 0 to 23 do // Try all Orientations,
+    for j := 0 to Points.Count -1 do // Try all points
+      for Beacon in aScanner.CorretedPoints do // Map to all beacons
+      begin
+        Corrected := CorrectPosition(points[j], Orientation);
+        PossibleScannerPosition := Beacon - Corrected;
+
+        FoundPoints := 0;
+        for i := 0 to Points.Count -1 do
+        begin
+          Scan := Points[i];
+          Corrected := CorrectPosition(Scan, Orientation);
+          PossibleBeacon := PossibleScannerPosition + Corrected;
+          if aScanner.CorretedPoints.Contains(PossibleBeacon) then
+            Inc(FoundPoints);
+          if (FoundPoints + Points.count - i) < 12 then // Not possible to map; break
+            Break;
+        end;
+
+        if FoundPoints >= 12 then // Found a match
+        begin
+          Writeln(Name,':',PossibleScannerPosition.x, ',', PossibleScannerPosition.y,',',PossibleScannerPosition.z, ' matching points ', FoundPoints);
+          FinalStartingPoint := aScanner.FinalStartingPoint + PossibleScannerPosition;
+
+          for Scan in Points do
+          begin
+            Corrected := CorrectPosition(Scan, Orientation);
+            CorretedPoints.Add(Corrected);
+
+            PossibleBeacon := FinalStartingPoint + Corrected;
+            if not aBeacons.Contains(PossibleBeacon) then
+              aBeacons.Add(PossibleBeacon);
+          end;
+          exit(True);
+        end;
+      end;
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay19'}
@@ -2118,24 +2124,31 @@ end;
 type GameResult = record P1, P2: int64 end;
 function TAdventOfCodeDay21.SolveA: Variant;
 
-  function _PlayGame(PosP1, PosP2, ScoreP1, ScoreP2, Die, DieRolls: integer): integer;
+  function IncDIe(aDie: integer): integer;
+  begin
+    Result := aDie + 1;
+    if Result > 100 then
+      Result := Result -100;
+  end;
+
+  function _PlayGame(CurrentPlayerPostion, NextPlayerPosition, CurrentPlayerScore, NextPlayerScore, Die, DieRolls: integer): integer;
   var Position, DieScore: Integer;
   begin
-    if ScoreP2 >= 1000 then
-      Exit(ScoreP1*DieRolls);
+    if NextPlayerScore >= 1000 then
+      Exit(CurrentPlayerScore*DieRolls);
 
-    DieScore := 3 * Die + 3;
-    if DieScore > 100 then
-      Dec(DieScore, 100);
+    DieScore := Die;
+    Die := IncDIe(Die);
+    DieScore := DieScore + Die;
+    Die := IncDIe(Die);
+    DieScore := DieScore + Die;
+    Die := IncDIe(Die);
 
-    Inc(Die, 3);
-    if Die > 100 then
-      Dec(Die, 100);
+    Position := CurrentPlayerPostion + DieScore;
+    while Position > 10 do
+      dec(Position, 10);
 
-    Position := PosP1 + DieScore;
-    if Position > 10 then
-      Position := 1 + Position mod 10;
-    Result := _PlayGame(PosP2, Position, ScoreP2, ScoreP1 + Position, Die, DieRolls+3);
+    Result := _PlayGame(NextPlayerPosition, Position, NextPlayerScore, CurrentPlayerScore + Position, Die, DieRolls+3);
   end;
 
 begin
@@ -2313,7 +2326,6 @@ function TAmphipodWork.AsString: string;
     Result := Result + Ord(Rooms[B][aInt]).ToString;
     Result := Result + Ord(Rooms[C][aInt]).ToString;
     Result := Result + Ord(Rooms[D][aInt]).ToString;
-
   end;
 
 var i: integer;
@@ -2477,6 +2489,7 @@ var CurrentWork, NewWork: TAmphipodWork;
     Depth, i, HallWayIndex, QueueSize: Integer;
     Seen: TDictionary<String, Boolean>;
     TopAmphipod, CurrentAmphipod: TAmphipod;
+    Rounds: integer;
 begin
   Result := 0;
   RoomDepth := 4;
@@ -2502,8 +2515,11 @@ begin
   Queue.Enqueue(NewWork);
   Seen := TDictionary<string, boolean>.Create;;
 
+  Rounds := 0;
+
   while Queue.Count > 0 do
   begin
+    Inc(Rounds);
     CurrentWork := Queue.Dequeue;
     if Seen.ContainsKey(CurrentWork.AsString) then
       Continue;
@@ -2578,6 +2594,8 @@ begin
     begin
       if DebugPath then
         DumpPath(CurrentWork.Path);
+
+      WriteLn(Rounds);
 
       Exit(CurrentWork.Engergy);
     end;
