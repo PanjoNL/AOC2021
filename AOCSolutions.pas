@@ -170,8 +170,8 @@ type
     function Explode(aDepth: integer): Boolean;
     function Split: Boolean;
     function IsSimpleNode: Boolean;
-    procedure UpdateLeft(aValue: integer; aExplodingNode: TSnailFishNode);
-    procedure UpdateRight(aValue: integer; aExplodingNode: TSnailFishNode);
+    function GetNode(aLeft: Boolean): TSnailFishNode;
+    procedure UpdateAfterExplosion(aValue: Integer; aExplodingNode: TSnailFishNode; aLeft: Boolean);
   public
     Constructor Create(aString: string); overload;
     Constructor Create(aParent: TSnailFishNode; aJson: TJsonValue); overload;
@@ -194,13 +194,15 @@ type
     class function Create(Const aX, aY, aZ: int64): TPosition3; static;
     class operator Add(a, b: TPosition3): TPosition3;
     class operator Subtract(a, b: TPosition3): TPosition3;
+    function ManhatenDistance(Other: TPosition3): int64;
   end;
 
   TScanner = class
   private
-    function CorrectPosition(Const aPosition: TPosition3; aMode: integer): TPosition3;
+    function CorrectPosition(Const aPosition: TPosition3; aOrientation: integer): TPosition3;
   public
     Points, CorretedPoints: TList<TPosition3>;
+    Distances: TList<Int64>;
     FinalStartingPoint: TPosition3;
     Name: String;
     constructor Create(); overload;
@@ -208,7 +210,6 @@ type
 
     procedure AddPoint(Const aString: string);
     function MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
-    function InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
   end;
 
   TAdventOfCodeDay19 = class(TAdventOfCode)
@@ -241,12 +242,14 @@ type
   end;
 
   TAmphipod = (A,B,C,D,None);
-  TAmphipodWork = record
-    Rooms: Array[TAmphipod] of Array[0..3] of TAmphipod;
-    HallWay: Array[0..10] of TAmphipod;
-    Engergy: Integer;
+  TAmphipodState = record
+    Places: array[0..26] of TAmphipod; // 0-10 hallway, 11/15/29/23 room A
+    TotalEngergyUsed: Integer;
+    GuesedTotalEnergy: Integer;
     Path: string; //For debuging
     function AsString: string;
+    function RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
+    class function Create: TAmphipodState; static;
   end;
 
   TAdventOfCodeDay23 = class(TAdventOfCode)
@@ -1694,8 +1697,8 @@ begin
   begin
     if aDepth >= 4 then
     begin
-      Parent.UpdateLeft(Left.IntValue, self);
-      Parent.UpdateRight(Right.IntValue, self);
+      Parent.UpdateAfterExplosion(Left.IntValue, Self, True);
+      Parent.UpdateAfterExplosion(Right.IntValue, Self, False);
       FreeAndNil(Left);
       FreeAndNil(Right);
       IntValue := 0;
@@ -1715,6 +1718,14 @@ begin
     Result := Right.Explode(aDepth + 1);
 end;
 
+function TSnailFishNode.GetNode(aLeft: Boolean): TSnailFishNode;
+begin
+  if aLeft then
+    result := Self.Left
+  else
+    Result := Self.Right;
+end;
+
 function TSnailFishNode.IsSimpleNode: Boolean;
 begin
   Result := not(Assigned(Left) or Assigned(Right))
@@ -1730,7 +1741,7 @@ begin
       Result := True;
       Left := TSnailFishNode.Create(self, Trunc(IntValue / 2));
       Right := TSnailFishNode.Create(self, Ceil(IntValue / 2));
-      IntValue := -1;
+      Self.IntValue := -1;
     end;
 
     Exit;
@@ -1739,6 +1750,7 @@ begin
   Result := Left.Split;
   if Result then
     Exit;
+
   Result := Right.Split;
 end;
 
@@ -1756,39 +1768,24 @@ begin
   end;
 end;
 
-procedure TSnailFishNode.UpdateRight(aValue: integer;
-aExplodingNode: TSnailFishNode);
+procedure TSnailFishNode.UpdateAfterExplosion(aValue: Integer; aExplodingNode: TSnailFishNode; aLeft: Boolean);
 var
   tmpNode: TSnailFishNode;
 begin
-  if Right = aExplodingNode then
+  // Select the exploding child
+  tmpNode := GetNode(aLeft);
+
+  // Walk up the tree until we find the non exploding root of this number
+  if tmpNode = aExplodingNode then
   begin
     if Assigned(Parent) then
-      Parent.UpdateRight(aValue, self);
+      Parent.UpdateAfterExplosion(aValue, self, aLeft);
     Exit;
   end;
 
-  tmpNode := Right;
+  // Walk down until we find a simple node to update
   while not tmpNode.IsSimpleNode do
-    tmpNode := tmpNode.Left;
-  Inc(tmpNode.IntValue, aValue);
-end;
-
-procedure TSnailFishNode.UpdateLeft(aValue: integer;
-aExplodingNode: TSnailFishNode);
-var
-  tmpNode: TSnailFishNode;
-begin
-  if Left = aExplodingNode then
-  begin
-    if Assigned(Parent) then
-      Parent.UpdateLeft(aValue, self);
-    Exit;
-  end;
-
-  tmpNode := Left;
-  while not tmpNode.IsSimpleNode do
-    tmpNode := tmpNode.Right;
+    tmpNode := tmpNode.GetNode(not aLeft);
   Inc(tmpNode.IntValue, aValue);
 end;
 
@@ -1807,14 +1804,12 @@ var
   i: integer;
   SnailFishNode: TSnailFishNode;
 begin
-  SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create((FInput[0])),
-    TSnailFishNode.Create(FInput[1]));
+  SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create((FInput[0])), TSnailFishNode.Create(FInput[1]));
   SnailFishNode.Stabalize;
 
   for i := 2 to FInput.Count - 1 do
   begin
-    SnailFishNode := TSnailFishNode.Create(SnailFishNode,
-      TSnailFishNode.Create(FInput[i]));
+    SnailFishNode := TSnailFishNode.Create(SnailFishNode, TSnailFishNode.Create(FInput[i]));
     SnailFishNode.Stabalize;
   end;
 
@@ -1835,8 +1830,7 @@ begin
       if i = j then
         Continue;
 
-      SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create(FInput[i]),
-        TSnailFishNode.Create(FInput[j]));
+      SnailFishNode := TSnailFishNode.Create(TSnailFishNode.Create(FInput[i]), TSnailFishNode.Create(FInput[j]));
       SnailFishNode.Stabalize;
       Result := Max(Result, SnailFishNode.CalcMagnitude);
       SnailFishNode.Free;
@@ -1849,6 +1843,14 @@ begin
   Result.x := aX;
   Result.y := aY;
   Result.z := aZ;
+end;
+
+function TPosition3.ManhatenDistance(Other: TPosition3): int64;
+begin
+  Result :=
+    Abs(Other.x - Self.x) +
+    Abs(Other.y - Self.y) +
+    Abs(Other.z - Self.z);
 end;
 
 class operator TPosition3.Add(a, b: TPosition3): TPosition3;
@@ -1869,14 +1871,20 @@ end;
 procedure TScanner.AddPoint(const aString: string);
 var
   Split: TStringDynArray;
+  Position, Other: TPosition3;
 begin
   Split := SplitString(aString, ',');
-  Points.Add(TPosition3.Create(StrToInt(Split[0]), StrToInt(Split[1]), StrToInt(Split[2])));
+  Position := TPosition3.Create(StrToInt(Split[0]), StrToInt(Split[1]), StrToInt(Split[2]));
+
+  for Other in Points do
+      Distances.Add(Position.ManhatenDistance(Other));
+
+  Points.Add(Position);
 end;
 
-function TScanner.CorrectPosition(const aPosition: TPosition3; aMode: integer): TPosition3;
+function TScanner.CorrectPosition(const aPosition: TPosition3; aOrientation: integer): TPosition3;
 begin //Todo refactor
-  case aMode of
+  case aOrientation of
     0:  Result := TPosition3.Create(aPosition.x, aPosition.y, aPosition.z);
     1:  Result := TPosition3.Create(aPosition.x, aPosition.z, -aPosition.y);
     2:  Result := TPosition3.Create(aPosition.x, -aPosition.y, -aPosition.z);
@@ -1908,6 +1916,7 @@ constructor TScanner.Create;
 begin
   Points := TList<TPosition3>.Create;
   CorretedPoints := TList<TPosition3>.Create;
+  Distances := TList<Int64>.Create;
   FinalStartingPoint := TPosition3.Create(0,0,0);
 end;
 
@@ -1915,62 +1924,61 @@ destructor TScanner.Destroy;
 begin
   Points.Free;
   CorretedPoints.Free;
-end;
-
-function TScanner.InternalMapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>; aMode: integer): Boolean;
-Var
-  PossibleStartingPoint, StartingPoint, Beacon, Scan, Corrected, PossibleBeacon : TPosition3;
-  FoundPoints, i, j: integer;
-begin
-  Result := False;
-  for j := 0 to Points.Count -13 do
-  begin
-    PossibleStartingPoint := points[j];
-    for Beacon in aScanner.CorretedPoints do
-    begin
-      Corrected := CorrectPosition(PossibleStartingPoint, aMode);
-      StartingPoint := Beacon - Corrected;
-
-      FoundPoints := 0;
-      for i := 0 to Points.Count -1 do
-      begin
-        Scan := Points[i];
-        Corrected := CorrectPosition(Scan, aMode);
-        PossibleBeacon := StartingPoint + Corrected;
-        if aScanner.CorretedPoints.Contains(PossibleBeacon) then
-          Inc(FoundPoints);
-        if (FoundPoints + Points.count - i) < 12 then
-          Break;
-      end;
-
-      if FoundPoints >= 12 then
-      begin
-        Writeln(Name,':',StartingPoint.x, ',', StartingPoint.y,',',StartingPoint.z, ' matching points ', FoundPoints);
-        for Scan in Points do
-        begin
-          FinalStartingPoint := aScanner.FinalStartingPoint + StartingPoint;
-
-          Corrected := CorrectPosition(Scan, aMode);
-          CorretedPoints.Add(Corrected);
-
-          PossibleBeacon := FinalStartingPoint + Corrected;
-          if not aBeacons.Contains(PossibleBeacon) then
-            aBeacons.Add(PossibleBeacon);
-        end;
-        exit(True);
-      end;
-    end;
-  end;
+  Distances.Free;
 end;
 
 function TScanner.MapBeacons(const aScanner: TScanner; var aBeacons: TList<TPosition3>): Boolean;
-var
-  i: Integer;
+Var
+  PossibleScannerPosition, Beacon, Scan, Corrected, PossibleBeacon : TPosition3;
+  FoundPoints, i, j, Orientation: integer;
+  Distance: Int64;
 begin
   Result := False;
-  for i := 0 to 23 do
-    if InternalMapBeacons(aScanner, aBeacons, i) then
-      exit(true);
+
+  FoundPoints := 0;
+  for Distance in aScanner.Distances do
+    if Self.Distances.Contains(Distance) then
+      Inc(FoundPoints);
+
+  if FoundPoints < 66 then
+    Exit;
+
+  for Orientation := 0 to 23 do // Try all Orientations,
+    for j := 0 to Points.Count -1 do // Try all points
+      for Beacon in aScanner.CorretedPoints do // Map to all beacons
+      begin
+        Corrected := CorrectPosition(points[j], Orientation);
+        PossibleScannerPosition := Beacon - Corrected;
+
+        FoundPoints := 0;
+        for i := 0 to Points.Count -1 do
+        begin
+          Scan := Points[i];
+          Corrected := CorrectPosition(Scan, Orientation);
+          PossibleBeacon := PossibleScannerPosition + Corrected;
+          if aScanner.CorretedPoints.Contains(PossibleBeacon) then
+            Inc(FoundPoints);
+          if (FoundPoints + Points.count - i) < 12 then // Not possible to map; break
+            Break;
+        end;
+
+        if FoundPoints >= 12 then // Found a match
+        begin
+          Writeln(Name,':',PossibleScannerPosition.x, ',', PossibleScannerPosition.y,',',PossibleScannerPosition.z, ' matching points ', FoundPoints);
+          FinalStartingPoint := aScanner.FinalStartingPoint + PossibleScannerPosition;
+
+          for Scan in Points do
+          begin
+            Corrected := CorrectPosition(Scan, Orientation);
+            CorretedPoints.Add(Corrected);
+
+            PossibleBeacon := FinalStartingPoint + Corrected;
+            if not aBeacons.Contains(PossibleBeacon) then
+              aBeacons.Add(PossibleBeacon);
+          end;
+          exit(True);
+        end;
+      end;
 end;
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay19'}
@@ -2118,24 +2126,31 @@ end;
 type GameResult = record P1, P2: int64 end;
 function TAdventOfCodeDay21.SolveA: Variant;
 
-  function _PlayGame(PosP1, PosP2, ScoreP1, ScoreP2, Die, DieRolls: integer): integer;
+  function IncDIe(aDie: integer): integer;
+  begin
+    Result := aDie + 1;
+    if Result > 100 then
+      Result := Result -100;
+  end;
+
+  function _PlayGame(CurrentPlayerPostion, NextPlayerPosition, CurrentPlayerScore, NextPlayerScore, Die, DieRolls: integer): integer;
   var Position, DieScore: Integer;
   begin
-    if ScoreP2 >= 1000 then
-      Exit(ScoreP1*DieRolls);
+    if NextPlayerScore >= 1000 then
+      Exit(CurrentPlayerScore*DieRolls);
 
-    DieScore := 3 * Die + 3;
-    if DieScore > 100 then
-      Dec(DieScore, 100);
+    DieScore := Die;
+    Die := IncDIe(Die);
+    DieScore := DieScore + Die;
+    Die := IncDIe(Die);
+    DieScore := DieScore + Die;
+    Die := IncDIe(Die);
 
-    Inc(Die, 3);
-    if Die > 100 then
-      Dec(Die, 100);
+    Position := CurrentPlayerPostion + DieScore;
+    while Position > 10 do
+      dec(Position, 10);
 
-    Position := PosP1 + DieScore;
-    if Position > 10 then
-      Position := 1 + Position mod 10;
-    Result := _PlayGame(PosP2, Position, ScoreP2, ScoreP1 + Position, Die, DieRolls+3);
+    Result := _PlayGame(NextPlayerPosition, Position, NextPlayerScore, CurrentPlayerScore + Position, Die, DieRolls+3);
   end;
 
 begin
@@ -2304,67 +2319,6 @@ end;
 
 {$ENDREGION}
 {$REGION 'TAdventOfCodeDay23'}
-function TAmphipodWork.AsString: string;
-
-  procedure Add(aInt: integer);
-  begin
-    Result := Result + '_';
-    Result := Result + Ord(Rooms[A][aInt]).ToString;
-    Result := Result + Ord(Rooms[B][aInt]).ToString;
-    Result := Result + Ord(Rooms[C][aInt]).ToString;
-    Result := Result + Ord(Rooms[D][aInt]).ToString;
-
-  end;
-
-var i: integer;
-begin
-  Result := '';
-  for i := 0 to 10 do
-    Result := Result + Ord(HallWay[i]).ToString;
-  Add(0);
-  Add(1);
-  Add(2);
-  Add(3);
-
-  Result := Result + '_' ;
-  Result := Result + Engergy.ToString;
-end;
-
-procedure TAdventOfCodeDay23.DumpPath(aPath: string);
-
-  procedure _Line(aPrefix, aLine, aSuffix: string);
-  begin
-    WriteLN(aPrefix, aLine[1], '#', aLine[2], '#', aLine[3], '#', aLine[4], aSuffix);
-  end;
-
-Var split, Split2: TStringDynArray;
-    i: integer;
-    s: string;
-begin
-  split := SplitString(aPath, '|');
-  for i := 1 to Length(split)-1 do
-  begin
-    Writeln('');
-    s := split[i];
-    S := s.Replace(Ord(A).ToString, 'A', [rfReplaceAll]);
-    S := s.Replace(Ord(B).ToString, 'B', [rfReplaceAll]);
-    S := s.Replace(Ord(C).ToString, 'C', [rfReplaceAll]);
-    S := s.Replace(Ord(D).ToString, 'D', [rfReplaceAll]);
-    S := s.Replace(Ord(None).ToString, '.', [rfReplaceAll]);
-    split2 := SplitString(s, '_');
-
-    Writeln('#############');
-    Writeln('#', Split2[0], '#');
-    _Line('###', Split2[1], '###' );
-    _Line('  #', Split2[2], '#  ' );
-    _Line('  #', Split2[3], '#  ' );
-    _Line('  #', Split2[4], '#  ' );
-    Writeln('  #########  ');
-    split2 := SplitString(split[i], '_');
-    WriteLn('energy: ', Split2[5]);
-  end;
-end;
-
 function TAdventOfCodeDay23.SolveA: Variant;
 begin
   Result := CalculateEngergyCost(True);
@@ -2375,212 +2329,322 @@ begin
   Result := CalculateEngergyCost(False);
 end;
 
+type TAmphipodInfo = record
+  AmphipodType: TAmphipod;
+  CharCode: string;
+  HallWayIndex,
+  EnergyCost: Integer;
+end;
+
+const AmphipodInfo:  array[TAmphipod] of TAmphipodInfo =
+(
+ (AmphipodType: A;    CharCode: 'A'; HallWayIndex: 2; EnergyCost: 1),
+ (AmphipodType: B;    CharCode: 'B'; HallWayIndex: 4; EnergyCost: 10),
+ (AmphipodType: C;    CharCode: 'C'; HallWayIndex: 6; EnergyCost: 100),
+ (AmphipodType: D;    CharCode: 'D'; HallWayIndex: 8; EnergyCost: 1000),
+ (AmphipodType: None; CharCode: '.'; HallWayIndex: 0; EnergyCost: 0)
+);
+
+{ TAmphipodState }
+
+class function TAmphipodState.Create: TAmphipodState;
+var
+  i: Integer;
+begin
+  Result.TotalEngergyUsed := 0;
+  Result.GuesedTotalEnergy := 0;
+
+  for i := 0 to 26 do
+    Result.Places[i] := None;
+
+  Result.Path := '';
+end;
+
+function TAmphipodState.AsString: string;
+var
+  i: integer;
+begin
+  Result := TotalEngergyUsed.ToString + '_';
+  for i := 0 to 26 do
+    Result := Result + AmphipodInfo[Places[i]].CharCode
+end;
+
+function TAmphipodState.RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
+begin
+  Result := 11 + Ord(aAmphipod) + aDepth * 4;
+end;
+
 function TAdventOfCodeDay23.CalculateEngergyCost(InstructionFolded: Boolean): integer;
 const DebugPath: boolean = False;
 var RoomDepth: integer;
 
-  procedure SetArray(var AArray: array of TAmphipod; p1, p2, p3, p4: TAmphipod);
+  function _RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
   begin
-    if InstructionFolded then
-    begin
-      AArray[0] := p1;
-      AArray[1] := p4;
-      AArray[2] := none;
-      AArray[3] := none;
-    end
-    else
-    begin
-      AArray[0] := p1;
-      AArray[1] := p2;
-      AArray[2] := p3;
-      AArray[3] := p4;
-    end;
+    Result := 11 + Ord(aAmphipod) + aDepth * 4;
   end;
 
-  function RoomOk(var AArray: array of TAmphipod; aChar: TAmphipod): boolean;
-  var i: integer;
+  function RoomOk(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
+  var
+    i: integer;
+    pod: TAmphipod;
   begin
     Result := True;
     for i := 0 to RoomDepth-1 do
-      if (AArray[i] <> None) and (AArray[i] <> aChar) then
+    begin
+      pod := state.Places[_RoomIndex(aAmphipod, i)];
+      if (pod <> None) and (pod <> aAmphipod) then
         Exit(False);
+    end;
   end;
 
-  function _TopAmphipod(var AArray: array of TAmphipod; out aDepth: integer): TAmphipod;
-  var i: integer;
+  function _TopAmphipod(aState: TAmphipodState;   aRoom: TAmphipod; out aDepth: integer): TAmphipod;
+  var
+    i: integer;
+    pod: TAmphipod;
   begin
     Result := None;
     for i := 0 to RoomDepth-1 do
-      if (AArray[i] <> None) then
+    begin
+      Pod := aState.Places[_RoomIndex(aRoom, i)];
+      if (pod <> None) then
       begin
-        Result := AArray[i];
+        Result := pod;
         aDepth := i;
         Exit;
       end;
+    end;
   end;
 
-  function _Depth(AArray: array of TAmphipod): integer;
+  function _Depth(aState: TAmphipodState; aRoom: TAmphipod): integer;
   var i: integer;
   begin
     Result := -99;
     for i := RoomDepth-1 downto 0 do
-      if AArray[i] = None then
+      if aState.Places[_RoomIndex(aRoom, i)] = None then
         Exit(i);
   end;
 
-  function EnergyCost(aChar: TAmphipod): integer;
+  function StrToAmphipod(Const aCharCode: string): TAmphipod;
+  var
+    CurrentAmpiPod: TAmphipod;
   begin
-    Result := -1;
-    case aChar of
-      A: Result := 1;
-      B: Result := 10;
-      C: Result := 100;
-      D: Result := 1000;
-    end;
+    Result := None;
+    for CurrentAmpiPod := low(TAmphipod) to High(TAmphipod) do
+      if AmphipodInfo[CurrentAmpiPod].CharCode = aCharCode then
+        Exit(CurrentAmpiPod)
   end;
 
-  function _HallWayIndex(Const aChar: TAmphipod): integer;
-  begin
-    Result := -1;
-    case aChar of
-      A: Result := 2;
-      B: Result := 4;
-      C: Result := 6;
-      D: Result := 8;
-    end;
-  end;
-
-  function StrToAmphipod(Const aStr: string): TAmphipod;
-  begin
-    case IndexStr(aStr, ['A','B','C','D']) of
-      0: Result := A;
-      1: Result := B;
-      2: Result := C;
-      3: Result := D;
-    else
-      Result := None;
-    end;
-  end;
-
-  function HallWayClear(aHallway: Array of TAmphipod; aFrom, aTo: integer): boolean;
+  function HallWayClear(aState: TAmphipodState; aFrom, aTo: integer): boolean;
   var i: integer;
   begin
     Result := True;
-    for i := aFrom to aTo do
-      if aHallWay[i] <> None then
+    for i := Min(aFrom, aTo) to Max(aFrom, aTo) do
+      if aState.Places[i] <> None then
         Exit(False);
   end;
 
-var CurrentWork, NewWork: TAmphipodWork;
-    Comparer: IComparer<TAmphipodWork>;
-    Queue: PriorityQueue<TAmphipodWork>;
-    Depth, i, HallWayIndex, QueueSize: Integer;
-    Seen: TDictionary<String, Boolean>;
-    TopAmphipod, CurrentAmphipod: TAmphipod;
+  function _Distance(a, b: integer): integer;
+  begin
+    Result := Abs(a-b);
+  end;
+
+  function _GuesEnergy(aState: TAmphipodState): integer;
+  var
+    i, distance: integer;
+    CurrentPod, room: TAmphipod;
+  begin
+    // Total used
+    Result := aState.TotalEngergyUsed;
+
+    // Hallway
+    for i := 0 to 10 do
+    begin
+      CurrentPod := aState.Places[i];
+      if CurrentPod = none then
+        Continue;
+
+      distance := Max(AmphipodInfo[CurrentPod].HallWayIndex, i-1) - Min(AmphipodInfo[CurrentPod].HallWayIndex, i+1) + RoomDepth + 1;
+      Result := Result + distance * AmphipodInfo[a].EnergyCost;
+    end;
+
+    // Rooms
+    for room := low(TAmphipod) to High(TAmphipod) do
+    begin
+      if room = None then
+        Continue;
+
+      for i := 0 to RoomDepth -1 do
+      begin
+        CurrentPod := aState.Places[_RoomIndex(room, i)];
+        if (CurrentPod <> none) and (CurrentPod <> room) then
+        begin
+          distance := i + _Distance(AmphipodInfo[CurrentPod].HallWayIndex, AmphipodInfo[Room].HallWayIndex);
+          Result := Result + AmphipodInfo[CurrentPod].EnergyCost * distance;
+        end;
+      end;
+    end;
+  end;
+
+  function UpdateAndCloneState(aCurrentState: TAmphipodState; aPodTomMove, aRoom: TAmphipod; aDepth, aHallWayPosition: integer): TAmphipodState;
+  var
+    tmp: TAmphipod;
+    roomIndex: integer;
+  begin
+    // Copy currentState;
+    Result := aCurrentState;
+
+    // Calc energy
+    Result.TotalEngergyUsed := Result.TotalEngergyUsed + AmphipodInfo[aPodTomMove].EnergyCost * (aDepth + 1 + _Distance(AmphipodInfo[aRoom].HallWayIndex, aHallWayPosition));
+
+    // Swap pods
+    roomIndex := _RoomIndex(aRoom, aDepth);
+    tmp := Result.Places[aHallWayPosition];
+    Result.Places[aHallWayPosition] := Result.Places[roomIndex];
+    Result.Places[roomIndex] := tmp;
+
+    Result.GuesedTotalEnergy := _GuesEnergy(Result);
+
+    if DebugPath then
+      Result.Path := Result.Path + '|' + Result.AsString;
+  end;
+
+var
+  CurrentState: TAmphipodState;
+  Comparer: IComparer<TAmphipodState>;
+  Queue: PriorityQueue<TAmphipodState>;
+  Depth, i, HallWayIndex, QueueSize: Integer;
+  Seen: TDictionary<String, Boolean>;
+  TopAmphipod, CurrentAmphipod, CurrentRoom: TAmphipod;
 begin
   Result := 0;
-  RoomDepth := 4;
-  if InstructionFolded then
-    RoomDepth := 2;
-  NewWork.Engergy := 0;
-  SetArray(NewWork.Rooms[A], StrToAmphipod(FInput[2][4]), D, D, StrToAmphipod(FInput[3][4]));
-  SetArray(NewWork.Rooms[B], StrToAmphipod(FInput[2][6]), C, B, StrToAmphipod(FInput[3][6]));
-  SetArray(NewWork.Rooms[C], StrToAmphipod(FInput[2][8]), B, A, StrToAmphipod(FInput[3][8]));
-  SetArray(NewWork.Rooms[D], StrToAmphipod(FInput[2][10]),A, C, StrToAmphipod(FInput[3][10]));
-  for i := 0 to 10 do
-    NewWork.HallWay[i] := None;
 
-  Comparer := TComparer<TAmphipodWork>.Construct(
-    function(const Left, Right: TAmphipodWork): integer
-    begin
-      Result := Sign(Left.Engergy - Right.Engergy);
-    end);
+  CurrentState := TAmphipodState.Create;
+
+  RoomDepth := 2;
+  if not InstructionFolded then
+  begin
+    RoomDepth := 4;
+
+    CurrentState.Places[_RoomIndex(A, 1)] := D;
+    CurrentState.Places[_RoomIndex(B, 1)] := C;
+    CurrentState.Places[_RoomIndex(C, 1)] := B;
+    CurrentState.Places[_RoomIndex(D, 1)] := A;
+
+    CurrentState.Places[_RoomIndex(A, 2)] := D;
+    CurrentState.Places[_RoomIndex(B, 2)] := B;
+    CurrentState.Places[_RoomIndex(C, 2)] := A;
+    CurrentState.Places[_RoomIndex(D, 2)] := C;
+  end;
+
+  // Process toprow
+  for i := 0 to 3 do
+    CurrentState.Places[_RoomIndex(TAmphipod(i), 0)] := StrToAmphipod(FInput[2][4 + i*2]);
+
+  // Process bottomrow
+  for i := 0 to 3 do
+    CurrentState.Places[_RoomIndex(TAmphipod(i), 1 + RoomDepth - 2)] := StrToAmphipod(FInput[3][4 + i*2]);
 
   if DebugPath then
-    NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
-  Queue := PriorityQueue<TAmphipodWork>.Create(Comparer, Comparer);
-  Queue.Enqueue(NewWork);
+    CurrentState.Path := CurrentState.AsString;
+
+  Comparer := TComparer<TAmphipodState>.Construct(
+    function(const Left, Right: TAmphipodState): integer
+    begin
+      if Abs(Left.TotalEngergyUsed - Right.TotalEngergyUsed) < 1000 then
+        Result := Sign(Left.TotalEngergyUsed - Right.TotalEngergyUsed)
+      else
+        Result := Sign(Left.GuesedTotalEnergy - Right.GuesedTotalEnergy);
+    end);
+
+  Queue := PriorityQueue<TAmphipodState>.Create(Comparer, Comparer);
+  Queue.Enqueue(CurrentState);
   Seen := TDictionary<string, boolean>.Create;;
 
   while Queue.Count > 0 do
   begin
-    CurrentWork := Queue.Dequeue;
-    if Seen.ContainsKey(CurrentWork.AsString) then
+    CurrentState := Queue.Dequeue;
+    if Seen.ContainsKey(CurrentState.AsString) then
       Continue;
-    Seen.Add(CurrentWork.AsString, true);
+
+    Seen.Add(CurrentState.AsString, true);
     QueueSize := Queue.Count;
 
-    for i := 0 to 10 do  //Check HallWay;
+     // Try to move from hallway to room
+    for i := 0 to 10 do
     begin
-      CurrentAmphipod := CurrentWork.HallWay[i];
-      if (CurrentAmphipod = None) or (not RoomOk(CurrentWork.Rooms[CurrentAmphipod], CurrentAmphipod))  then
+      CurrentAmphipod := CurrentState.Places[i];
+      if (CurrentAmphipod = None) or (not RoomOk(CurrentState, CurrentAmphipod))  then
         Continue; //Nothing here or room is occupied
 
-      HallWayIndex := _HallWayIndex(CurrentAmphipod);
-      if not HallWayClear(CurrentWork.HallWay, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1) ) then
+      HallWayIndex := AmphipodInfo[CurrentAmphipod].HallWayIndex;
+
+      if not HallWayClear(CurrentState, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1)) then
         continue;
 
-      // Can reach it!
-      NewWork := CurrentWork;
-      Depth := _Depth(CurrentWork.Rooms[CurrentWork.HallWay[i]]);
-      NewWork.Rooms[CurrentAmphipod][Depth] := CurrentAmphipod;
-      NewWork.HallWay[i] := None;
-      NewWork.Engergy := NewWork.Engergy + EnergyCost(CurrentWork.HallWay[i])  * (Depth + 1 + Max(HallWayIndex, i) -  Min(HallWayIndex, i));
-      if DebugPath then
-        NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
-      Queue.Enqueue(NewWork);
+      // Can reach it!, calc depth
+      Depth := _Depth(CurrentState, CurrentAmphipod);
+      Queue.Enqueue(UpdateAndCloneState(CurrentState, CurrentAmphipod, CurrentAmphipod, Depth, i));
     end;
 
-    for CurrentAmphipod := low(TAmphipod) to High(TAmphipod) do // Check rooms
+    // Try to move from room to hallway
+    for CurrentRoom := low(TAmphipod) to High(TAmphipod) do
     begin
-      if (CurrentAmphipod = none) or RoomOk(CurrentWork.Rooms[CurrentAmphipod], CurrentAmphipod) then
-        Continue;
+      if (CurrentRoom = none) or RoomOk(CurrentState, CurrentRoom) then
+        Continue; // Not a room or room is already full
 
-      TopAmphipod := _TopAmphipod(CurrentWork.Rooms[CurrentAmphipod], Depth);
-      HallWayIndex := _HallWayIndex(CurrentAmphipod);
+      TopAmphipod := _TopAmphipod(CurrentState, CurrentRoom, Depth);
+      HallWayIndex := AmphipodInfo[CurrentRoom].HallWayIndex;
 
-      for i := HallWayIndex downto 0 do // Check left
+      for i := 0 to 10 do
       begin
-        if i in [2,4,6,8] then // Entrance
+        if i in [2,4,6,8] then // skip entrance to room
           continue;
 
-        if CurrentWork.Hallway[i] <> None then
-          break; //Found block;
+        if not HallWayClear(CurrentState, i, HallWayIndex) then
+          Continue; // Hallway is blocked
 
-        NewWork := CurrentWork;
-        NewWork.Engergy := NewWork.Engergy + EnergyCost(TopAmphipod)* (Depth +1 - i + _HallWayIndex(CurrentAmphipod));
-        NewWork.Rooms[CurrentAmphipod][Depth] := None;
-        NewWork.HallWay[i] := TopAmphipod;
-        if DebugPath then
-          NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
-        Queue.Enqueue(NewWork);
-      end;
-
-      for i := HallWayIndex to 10 do //Check right;
-      begin
-        if i in [2,4,6,8] then // Entrance
-          continue;
-
-        if CurrentWork.Hallway[i] <> None then
-          break; //Found block;
-
-        NewWork := CurrentWork;
-        NewWork.Rooms[CurrentAmphipod][Depth] := None;
-        NewWork.Engergy := NewWork.Engergy + EnergyCost(TopAmphipod) * (Depth + 1 + i - _HallWayIndex(CurrentAmphipod));
-        NewWork.HallWay[i] := TopAmphipod;
-        if DebugPath then
-          NewWork.Path := NewWork.Path + '|' + NewWork.AsString;
-        Queue.Enqueue(NewWork);
+        // Can reach it;
+        Queue.Enqueue(UpdateAndCloneState(CurrentState, TopAmphipod, CurrentRoom, Depth, i));
       end;
     end;
 
-    if (QueueSize = Queue.Count) and HallWayClear(CurrentWork.HallWay, 0, 10) then
+    if (QueueSize = Queue.Count) and HallWayClear(CurrentState, 0, 10) then
     begin
       if DebugPath then
-        DumpPath(CurrentWork.Path);
+        DumpPath(CurrentState.Path);
 
-      Exit(CurrentWork.Engergy);
+      Exit(CurrentState.TotalEngergyUsed);
     end;
+  end;
+end;
+
+procedure TAdventOfCodeDay23.DumpPath(aPath: string);
+
+  procedure _Line(aPrefix, aLine, aSuffix: string);
+  begin
+    WriteLN(aPrefix, aLine[1], '#', aLine[2], '#', aLine[3], '#', aLine[4], aSuffix);
+  end;
+
+Var
+  split, Split2: TStringDynArray;
+  i: integer;
+  s: string;
+begin
+  split := SplitString(aPath, '|');
+  for i := 0 to Length(split)-1 do
+  begin
+    Writeln('');
+    split2 := SplitString(split[i], '_');
+    s := Split2[1];
+
+    Writeln('#############');
+    Writeln('#', copy(s, 0, 10), '#');
+    _Line('###', copy(s, 12, 4), '###' );
+    _Line('  #', copy(s, 16, 4), '#  ' );
+    _Line('  #', copy(s, 20, 4), '#  ' );
+    _Line('  #', copy(s, 24, 4), '#  ' );
+    Writeln('  #########  ');
+    WriteLn('energy: ', Split2[0]);
   end;
 end;
 {$ENDREGION}
