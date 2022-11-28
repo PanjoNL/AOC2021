@@ -2375,7 +2375,7 @@ begin
 end;
 
 function TAdventOfCodeDay23.CalculateEngergyCost(InstructionFolded: Boolean): integer;
-const DebugPath: boolean = False;
+const DebugPath: boolean = True;
 var RoomDepth: integer;
 
   function _RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
@@ -2383,7 +2383,7 @@ var RoomDepth: integer;
     Result := 11 + Ord(aAmphipod) + aDepth * 4;
   end;
 
-  function RoomOk(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
+  function _RoomReady(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
   var
     i: integer;
     pod: TAmphipod;
@@ -2512,11 +2512,12 @@ var
   CurrentState: TAmphipodState;
   Comparer: IComparer<TAmphipodState>;
   Queue: PriorityQueue<TAmphipodState>;
-  Depth, i, HallWayIndex, QueueSize: Integer;
+  Depth, i, HallWayIndex, QueueSize, RoomIndex, Distance: Integer;
   Seen: TDictionary<String, Boolean>;
   TopAmphipod, CurrentAmphipod, CurrentRoom: TAmphipod;
+  StateChanged, StateChanged2: Boolean;
 begin
-  Result := 0;
+  Result := MaxInt;
 
   CurrentState := TAmphipodState.Create;
 
@@ -2550,10 +2551,10 @@ begin
   Comparer := TComparer<TAmphipodState>.Construct(
     function(const Left, Right: TAmphipodState): integer
     begin
-      if Abs(Left.TotalEngergyUsed - Right.TotalEngergyUsed) < 1000 then
+     // if Abs(Left.TotalEngergyUsed - Right.TotalEngergyUsed) < 1000 then
         Result := Sign(Left.TotalEngergyUsed - Right.TotalEngergyUsed)
-      else
-        Result := Sign(Left.GuesedTotalEnergy - Right.GuesedTotalEnergy);
+      //else
+       // Result := Sign(Left.GuesedTotalEnergy - Right.GuesedTotalEnergy);
     end);
 
   Queue := PriorityQueue<TAmphipodState>.Create(Comparer, Comparer);
@@ -2562,34 +2563,104 @@ begin
 
   while Queue.Count > 0 do
   begin
+    StateChanged2 := False;
     CurrentState := Queue.Dequeue;
+
+    if CurrentState.TotalEngergyUsed > result then
+      Continue;
+
     if Seen.ContainsKey(CurrentState.AsString) then
       Continue;
 
     Seen.Add(CurrentState.AsString, true);
     QueueSize := Queue.Count;
 
-     // Try to move from hallway to room
-    for i := 0 to 10 do
-    begin
-      CurrentAmphipod := CurrentState.Places[i];
-      if (CurrentAmphipod = None) or (not RoomOk(CurrentState, CurrentAmphipod))  then
-        Continue; //Nothing here or room is occupied
+    // Try to move everything from the hallway to the assinged rooms
+    repeat
+      StateChanged := False;
 
-      HallWayIndex := AmphipodInfo[CurrentAmphipod].HallWayIndex;
+      for i := 0 to 10 do
+      begin
+        CurrentAmphipod := CurrentState.Places[i];
+        if (CurrentAmphipod = None) or (not _RoomReady(CurrentState, CurrentAmphipod))  then
+          Continue; //Nothing here or room is occupied
 
-      if not HallWayClear(CurrentState, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1)) then
-        continue;
+        HallWayIndex := AmphipodInfo[CurrentAmphipod].HallWayIndex;
 
-      // Can reach it!, calc depth
-      Depth := _Depth(CurrentState, CurrentAmphipod);
-      Queue.Enqueue(UpdateAndCloneState(CurrentState, CurrentAmphipod, CurrentAmphipod, Depth, i));
-    end;
+        if not HallWayClear(CurrentState, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1)) then
+          continue;
+
+        // Can reach it!, calc depth
+        StateChanged := True;
+
+        Depth := _Depth(CurrentState, CurrentAmphipod);
+
+        // Calc energy
+        CurrentState.TotalEngergyUsed :=
+          CurrentState.TotalEngergyUsed + AmphipodInfo[CurrentAmphipod].EnergyCost * (Depth + 1 + _Distance(AmphipodInfo[CurrentAmphipod].HallWayIndex, i));
+
+        // Swap pods
+        RoomIndex := _RoomIndex(CurrentAmphipod, Depth);
+        CurrentState.Places[i] := None;
+        CurrentState.Places[roomIndex] := CurrentAmphipod;
+        StateChanged2 := True;
+
+        if DebugPath then
+          CurrentState.Path := CurrentState.Path + '|' + CurrentState.AsString;
+      end;
+    until (not StateChanged);
+
+//    // Try To Move from room to room
+//    repeat
+//      StateChanged := False;
+//
+//      for CurrentRoom := low(TAmphipod) to High(TAmphipod) do
+//      begin
+//        if (CurrentRoom = none) or _RoomReady(CurrentState, CurrentRoom) then
+//          Continue; // Not a room or room is already full
+//
+//        // Select the pod to move out
+//        TopAmphipod := _TopAmphipod(CurrentState, CurrentRoom, Depth);
+//
+//        // Check if Recieving room is ready;
+//        if not _RoomReady(CurrentState, TopAmphipod) then
+//          Continue;
+//
+//        // Check if hallway is clear
+//        if not HallWayClear(CurrentState, AmphipodInfo[CurrentRoom].HallWayIndex, AmphipodInfo[TopAmphipod].HallWayIndex) then
+//          Continue;
+//
+//        // Can reach it!
+//        StateChanged := True;
+//
+//        Distance := Depth + 1;
+//
+//
+//
+//
+//        // Calc energy
+//        CurrentState.TotalEngergyUsed := CurrentState.TotalEngergyUsed
+//          + AmphipodInfo[TopAmphipod].EnergyCost *
+//          (Depth // Depth to move out
+//        + _Distance(AmphipodInfo[CurrentRoom].HallWayIndex, AmphipodInfo[TopAmphipod].HallWayIndex)
+//        + _Depth(CurrentState, TopAmphipod) + 1);
+//
+//        // Swap pods
+//        RoomIndex := _RoomIndex(TopAmphipod, Depth);
+//        CurrentState.Places[roomIndex] := None;
+//        RoomIndex := _RoomIndex(TopAmphipod, _Depth(CurrentState, TopAmphipod));
+//        CurrentState.Places[RoomIndex] := TopAmphipod;
+//
+//        if DebugPath then
+//          CurrentState.Path := CurrentState.Path + '|' + CurrentState.AsString;
+//      end;
+//
+//    until (not StateChanged);
 
     // Try to move from room to hallway
     for CurrentRoom := low(TAmphipod) to High(TAmphipod) do
     begin
-      if (CurrentRoom = none) or RoomOk(CurrentState, CurrentRoom) then
+      if (CurrentRoom = none) or _RoomReady(CurrentState, CurrentRoom) then
         Continue; // Not a room or room is already full
 
       TopAmphipod := _TopAmphipod(CurrentState, CurrentRoom, Depth);
@@ -2608,13 +2679,22 @@ begin
       end;
     end;
 
-    if (QueueSize = Queue.Count) and HallWayClear(CurrentState, 0, 10) then
+    if HallWayClear(CurrentState, 0, 10) and _RoomReady(CurrentState, A) and _RoomReady(CurrentState, B) and _RoomReady(CurrentState, C)   then
     begin
-      if DebugPath then
-        DumpPath(CurrentState.Path);
+      if Result > CurrentState.TotalEngergyUsed then
 
-      Exit(CurrentState.TotalEngergyUsed);
+      WriteLn(CurrentState.TotalEngergyUsed, ' (', queue.Count,')');
+      Result := Min(Result, CurrentState.TotalEngergyUsed);
     end;
+
+
+//    if (QueueSize = Queue.Count) and HallWayClear(CurrentState, 0, 10)then
+//    begin
+//      if DebugPath then
+//        DumpPath(CurrentState.Path);
+//
+//      Exit(CurrentState.TotalEngergyUsed);
+//    end;
   end;
 end;
 
