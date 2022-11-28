@@ -2380,7 +2380,7 @@ var RoomDepth: integer;
 
   function _RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
   begin
-    Result := 11 + Ord(aAmphipod) + aDepth * 4;
+    Result := 11 + Ord(aAmphipod) + (aDepth-1) * 4;
   end;
 
   function _RoomReady(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
@@ -2389,7 +2389,7 @@ var RoomDepth: integer;
     pod: TAmphipod;
   begin
     Result := True;
-    for i := 0 to RoomDepth-1 do
+    for i := 1 to RoomDepth do
     begin
       pod := state.Places[_RoomIndex(aAmphipod, i)];
       if (pod <> None) and (pod <> aAmphipod) then
@@ -2403,7 +2403,7 @@ var RoomDepth: integer;
     pod: TAmphipod;
   begin
     Result := None;
-    for i := 0 to RoomDepth-1 do
+    for i := 1 to RoomDepth do
     begin
       Pod := aState.Places[_RoomIndex(aRoom, i)];
       if (pod <> None) then
@@ -2419,7 +2419,7 @@ var RoomDepth: integer;
   var i: integer;
   begin
     Result := -99;
-    for i := RoomDepth-1 downto 0 do
+    for i := RoomDepth downto 1 do
       if aState.Places[_RoomIndex(aRoom, i)] = None then
         Exit(i);
   end;
@@ -2473,7 +2473,7 @@ var RoomDepth: integer;
       if room = None then
         Continue;
 
-      for i := 0 to RoomDepth -1 do
+      for i := 1 to RoomDepth  do
       begin
         CurrentPod := aState.Places[_RoomIndex(room, i)];
         if (CurrentPod <> none) and (CurrentPod <> room) then
@@ -2494,7 +2494,7 @@ var RoomDepth: integer;
     Result := aCurrentState;
 
     // Calc energy
-    Result.TotalEngergyUsed := Result.TotalEngergyUsed + AmphipodInfo[aPodTomMove].EnergyCost * (aDepth + 1 + _Distance(AmphipodInfo[aRoom].HallWayIndex, aHallWayPosition));
+    Result.TotalEngergyUsed := Result.TotalEngergyUsed + AmphipodInfo[aPodTomMove].EnergyCost * (aDepth + _Distance(AmphipodInfo[aRoom].HallWayIndex, aHallWayPosition));
 
     // Swap pods
     roomIndex := _RoomIndex(aRoom, aDepth);
@@ -2526,24 +2526,24 @@ begin
   begin
     RoomDepth := 4;
 
-    CurrentState.Places[_RoomIndex(A, 1)] := D;
-    CurrentState.Places[_RoomIndex(B, 1)] := C;
-    CurrentState.Places[_RoomIndex(C, 1)] := B;
-    CurrentState.Places[_RoomIndex(D, 1)] := A;
-
     CurrentState.Places[_RoomIndex(A, 2)] := D;
-    CurrentState.Places[_RoomIndex(B, 2)] := B;
-    CurrentState.Places[_RoomIndex(C, 2)] := A;
-    CurrentState.Places[_RoomIndex(D, 2)] := C;
+    CurrentState.Places[_RoomIndex(B, 2)] := C;
+    CurrentState.Places[_RoomIndex(C, 2)] := B;
+    CurrentState.Places[_RoomIndex(D, 2)] := A;
+
+    CurrentState.Places[_RoomIndex(A, 3)] := D;
+    CurrentState.Places[_RoomIndex(B, 3)] := B;
+    CurrentState.Places[_RoomIndex(C, 3)] := A;
+    CurrentState.Places[_RoomIndex(D, 3)] := C;
   end;
 
   // Process toprow
   for i := 0 to 3 do
-    CurrentState.Places[_RoomIndex(TAmphipod(i), 0)] := StrToAmphipod(FInput[2][4 + i*2]);
+    CurrentState.Places[_RoomIndex(TAmphipod(i), 1)] := StrToAmphipod(FInput[2][4 + i*2]);
 
   // Process bottomrow
   for i := 0 to 3 do
-    CurrentState.Places[_RoomIndex(TAmphipod(i), 1 + RoomDepth - 2)] := StrToAmphipod(FInput[3][4 + i*2]);
+    CurrentState.Places[_RoomIndex(TAmphipod(i), RoomDepth)] := StrToAmphipod(FInput[3][4 + i*2]);
 
   if DebugPath then
     CurrentState.Path := CurrentState.AsString;
