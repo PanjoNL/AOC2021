@@ -245,7 +245,7 @@ type
   TAmphipodState = record
     Places: array[0..26] of TAmphipod; // 0-10 hallway, 11/15/29/23 room A
     TotalEngergyUsed: Integer;
-    GuesedTotalEnery: Integer;
+    GuesedTotalEnergy: Integer;
     Path: string; //For debuging
     function AsString: string;
     function RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
@@ -2352,7 +2352,7 @@ var
   i: Integer;
 begin
   Result.TotalEngergyUsed := 0;
-  Result.GuesedTotalEnery := 0;
+  Result.GuesedTotalEnergy := 0;
 
   for i := 0 to 26 do
     Result.Places[i] := None;
@@ -2478,7 +2478,7 @@ var RoomDepth: integer;
         CurrentPod := aState.Places[_RoomIndex(room, i)];
         if (CurrentPod <> none) and (CurrentPod <> room) then
         begin
-          distance := i + _Distance(AmphipodInfo[CurrentPod].HallWayIndex, AmphipodInfo[Room].HallWayIndex) + 2;
+          distance := i + _Distance(AmphipodInfo[CurrentPod].HallWayIndex, AmphipodInfo[Room].HallWayIndex);
           Result := Result + AmphipodInfo[CurrentPod].EnergyCost * distance;
         end;
       end;
@@ -2502,7 +2502,7 @@ var RoomDepth: integer;
     Result.Places[aHallWayPosition] := Result.Places[roomIndex];
     Result.Places[roomIndex] := tmp;
 
-    Result.GuesedTotalEnery := _GuesEnergy(Result);
+    Result.GuesedTotalEnergy := _GuesEnergy(Result);
 
     if DebugPath then
       Result.Path := Result.Path + '|' + Result.AsString;
@@ -2515,7 +2515,6 @@ var
   Depth, i, HallWayIndex, QueueSize: Integer;
   Seen: TDictionary<String, Boolean>;
   TopAmphipod, CurrentAmphipod, CurrentRoom: TAmphipod;
-  cnt: integer
 begin
   Result := 0;
 
@@ -2551,22 +2550,21 @@ begin
   Comparer := TComparer<TAmphipodState>.Construct(
     function(const Left, Right: TAmphipodState): integer
     begin
-      Result := Sign(Left.GuesedTotalEnery - Right.GuesedTotalEnery);
+      if Abs(Left.TotalEngergyUsed - Right.TotalEngergyUsed) < 1000 then
+        Result := Sign(Left.TotalEngergyUsed - Right.TotalEngergyUsed)
+      else
+        Result := Sign(Left.GuesedTotalEnergy - Right.GuesedTotalEnergy);
     end);
 
   Queue := PriorityQueue<TAmphipodState>.Create(Comparer, Comparer);
   Queue.Enqueue(CurrentState);
   Seen := TDictionary<string, boolean>.Create;;
 
-  cnt := 0
-
   while Queue.Count > 0 do
   begin
     CurrentState := Queue.Dequeue;
     if Seen.ContainsKey(CurrentState.AsString) then
       Continue;
-
-    inc(cnt);
 
     Seen.Add(CurrentState.AsString, true);
     QueueSize := Queue.Count;
@@ -2614,8 +2612,6 @@ begin
     begin
       if DebugPath then
         DumpPath(CurrentState.Path);
-
-      writeLn(cnt);
 
       Exit(CurrentState.TotalEngergyUsed);
     end;
