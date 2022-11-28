@@ -245,10 +245,8 @@ type
   TAmphipodState = record
     Places: array[0..26] of TAmphipod; // 0-10 hallway, 11/15/29/23 room A
     TotalEngergyUsed: Integer;
-    GuesedTotalEnergy: Integer;
     Path: string; //For debuging
     function AsString: string;
-    function RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
     class function Create: TAmphipodState; static;
   end;
 
@@ -2352,7 +2350,6 @@ var
   i: Integer;
 begin
   Result.TotalEngergyUsed := 0;
-  Result.GuesedTotalEnergy := 0;
 
   for i := 0 to 26 do
     Result.Places[i] := None;
@@ -2369,27 +2366,22 @@ begin
     Result := Result + AmphipodInfo[Places[i]].CharCode
 end;
 
-function TAmphipodState.RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
-begin
-  Result := 11 + Ord(aAmphipod) + aDepth * 4;
-end;
-
 function TAdventOfCodeDay23.CalculateEngergyCost(InstructionFolded: Boolean): integer;
 const DebugPath: boolean = False;
 var RoomDepth: integer;
 
   function _RoomIndex(aAmphipod: TAmphipod; aDepth: integer): Integer;
   begin
-    Result := 11 + Ord(aAmphipod) + aDepth * 4;
+    Result := 11 + Ord(aAmphipod) + (aDepth-1) * 4;
   end;
 
-  function RoomOk(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
+  function _RoomReady(state: TAmphipodState; aAmphipod: TAmphipod): boolean;
   var
     i: integer;
     pod: TAmphipod;
   begin
     Result := True;
-    for i := 0 to RoomDepth-1 do
+    for i := 1 to RoomDepth do
     begin
       pod := state.Places[_RoomIndex(aAmphipod, i)];
       if (pod <> None) and (pod <> aAmphipod) then
@@ -2397,13 +2389,13 @@ var RoomDepth: integer;
     end;
   end;
 
-  function _TopAmphipod(aState: TAmphipodState;   aRoom: TAmphipod; out aDepth: integer): TAmphipod;
+  function _TopAmphipod(aState: TAmphipodState; aRoom: TAmphipod; out aDepth: integer): TAmphipod;
   var
     i: integer;
     pod: TAmphipod;
   begin
     Result := None;
-    for i := 0 to RoomDepth-1 do
+    for i := 1 to RoomDepth do
     begin
       Pod := aState.Places[_RoomIndex(aRoom, i)];
       if (pod <> None) then
@@ -2419,7 +2411,7 @@ var RoomDepth: integer;
   var i: integer;
   begin
     Result := -99;
-    for i := RoomDepth-1 downto 0 do
+    for i := RoomDepth downto 1 do
       if aState.Places[_RoomIndex(aRoom, i)] = None then
         Exit(i);
   end;
@@ -2448,75 +2440,101 @@ var RoomDepth: integer;
     Result := Abs(a-b);
   end;
 
-  function _GuesEnergy(aState: TAmphipodState): integer;
-  var
-    i, distance: integer;
-    CurrentPod, room: TAmphipod;
+  procedure UpdateState(var aState: TAmphipodState; aMovingPod: TAmphipod; MovedFrom, MovedTo, Distance: Integer);
   begin
-    // Total used
-    Result := aState.TotalEngergyUsed;
-
-    // Hallway
-    for i := 0 to 10 do
-    begin
-      CurrentPod := aState.Places[i];
-      if CurrentPod = none then
-        Continue;
-
-      distance := Max(AmphipodInfo[CurrentPod].HallWayIndex, i-1) - Min(AmphipodInfo[CurrentPod].HallWayIndex, i+1) + RoomDepth + 1;
-      Result := Result + distance * AmphipodInfo[a].EnergyCost;
-    end;
-
-    // Rooms
-    for room := low(TAmphipod) to High(TAmphipod) do
-    begin
-      if room = None then
-        Continue;
-
-      for i := 0 to RoomDepth -1 do
-      begin
-        CurrentPod := aState.Places[_RoomIndex(room, i)];
-        if (CurrentPod <> none) and (CurrentPod <> room) then
-        begin
-          distance := i + _Distance(AmphipodInfo[CurrentPod].HallWayIndex, AmphipodInfo[Room].HallWayIndex);
-          Result := Result + AmphipodInfo[CurrentPod].EnergyCost * distance;
-        end;
-      end;
-    end;
-  end;
-
-  function UpdateAndCloneState(aCurrentState: TAmphipodState; aPodTomMove, aRoom: TAmphipod; aDepth, aHallWayPosition: integer): TAmphipodState;
-  var
-    tmp: TAmphipod;
-    roomIndex: integer;
-  begin
-    // Copy currentState;
-    Result := aCurrentState;
-
     // Calc energy
-    Result.TotalEngergyUsed := Result.TotalEngergyUsed + AmphipodInfo[aPodTomMove].EnergyCost * (aDepth + 1 + _Distance(AmphipodInfo[aRoom].HallWayIndex, aHallWayPosition));
+    aState.TotalEngergyUsed := aState.TotalEngergyUsed + Distance * AmphipodInfo[aMovingPod].EnergyCost;
 
-    // Swap pods
-    roomIndex := _RoomIndex(aRoom, aDepth);
-    tmp := Result.Places[aHallWayPosition];
-    Result.Places[aHallWayPosition] := Result.Places[roomIndex];
-    Result.Places[roomIndex] := tmp;
-
-    Result.GuesedTotalEnergy := _GuesEnergy(Result);
+    // Swap Nodes;
+    aState.Places[MovedFrom] := None;
+    aState.Places[MovedTo] := aMovingPod;
 
     if DebugPath then
-      Result.Path := Result.Path + '|' + Result.AsString;
+      aState.Path := aState.Path + '|' + aState.AsString;
+  end;
+
+  procedure _MoveRoomToRoom(var aState: TAmphipodState);
+  var
+    CurrentRoom, TopAmphipod: TAmphipod;
+    Depth, Distance, TargetDepth: integer;
+    StateChanged: boolean;
+  begin
+    repeat
+      StateChanged := False;
+
+      for CurrentRoom := low(TAmphipod) to High(TAmphipod) do
+      begin
+        if (CurrentRoom = none) or _RoomReady(aState, CurrentRoom) then
+          Continue; // Not a room or room doesnt contain invalid amphipods
+
+        // Select the pod to move out
+        TopAmphipod := _TopAmphipod(aState, CurrentRoom, Depth);
+
+        // Check if Recieving room is ready;
+        if not _RoomReady(aState, TopAmphipod) then
+          Continue;
+
+        // Check if hallway is clear
+        if not HallWayClear(aState, AmphipodInfo[TopAmphipod].HallWayIndex, AmphipodInfo[CurrentRoom].HallWayIndex) then
+        //if not HallWayClear(CurrentState, 0, 10) then
+          Continue;
+
+        // Can reach it!
+        StateChanged := True;
+
+        TargetDepth := _Depth(aState, TopAmphipod);
+
+        Distance :=
+            Depth
+          + _Distance(AmphipodInfo[CurrentRoom].HallWayIndex, AmphipodInfo[TopAmphipod].HallWayIndex)
+          + TargetDepth;
+
+        UpdateState(aState, TopAmphipod, _RoomIndex(CurrentRoom, Depth), _RoomIndex(TopAmphipod, TargetDepth), Distance );
+     end;
+
+    until (not StateChanged);
+  end;
+
+  procedure _MoveHallWayToRoom(var aState: TAmphipodState);
+  var
+    CurrentAmphipod: TAmphipod;
+    i, HallWayIndex, Depth, Distance: integer;
+    StateChanged: Boolean;
+  begin
+    repeat
+      StateChanged := False;
+
+      for i := 0 to 10 do
+      begin
+        CurrentAmphipod := aState.Places[i];
+        if (CurrentAmphipod = None) or (not _RoomReady(aState, CurrentAmphipod))  then
+          Continue; //Nothing here or room is occupied
+
+        HallWayIndex := AmphipodInfo[CurrentAmphipod].HallWayIndex;
+
+        if not HallWayClear(aState, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1)) then
+          continue;
+
+        // Can reach it!, calc depth
+        StateChanged := True;
+
+        Depth := _Depth(aState, CurrentAmphipod);
+        Distance := Depth + _Distance(AmphipodInfo[CurrentAmphipod].HallWayIndex, i);
+        UpdateState(aState, CurrentAmphipod, i, _RoomIndex(CurrentAmphipod, Depth), Distance);
+      end;
+    until (not StateChanged);
   end;
 
 var
-  CurrentState: TAmphipodState;
-  Comparer: IComparer<TAmphipodState>;
-  Queue: PriorityQueue<TAmphipodState>;
-  Depth, i, HallWayIndex, QueueSize: Integer;
+  CurrentState, NewState: TAmphipodState;
+  Queue: Tqueue<TAmphipodState>;
+  BestPath: string;
+  Depth, Distance, i, HallWayIndex: Integer;
   Seen: TDictionary<String, Boolean>;
-  TopAmphipod, CurrentAmphipod, CurrentRoom: TAmphipod;
+  TopAmphipod, CurrentRoom: TAmphipod;
 begin
-  Result := 0;
+  Result := MaxInt;
+  BestPath := '';
 
   CurrentState := TAmphipodState.Create;
 
@@ -2525,71 +2543,57 @@ begin
   begin
     RoomDepth := 4;
 
-    CurrentState.Places[_RoomIndex(A, 1)] := D;
-    CurrentState.Places[_RoomIndex(B, 1)] := C;
-    CurrentState.Places[_RoomIndex(C, 1)] := B;
-    CurrentState.Places[_RoomIndex(D, 1)] := A;
-
     CurrentState.Places[_RoomIndex(A, 2)] := D;
-    CurrentState.Places[_RoomIndex(B, 2)] := B;
-    CurrentState.Places[_RoomIndex(C, 2)] := A;
-    CurrentState.Places[_RoomIndex(D, 2)] := C;
+    CurrentState.Places[_RoomIndex(B, 2)] := C;
+    CurrentState.Places[_RoomIndex(C, 2)] := B;
+    CurrentState.Places[_RoomIndex(D, 2)] := A;
+
+    CurrentState.Places[_RoomIndex(A, 3)] := D;
+    CurrentState.Places[_RoomIndex(B, 3)] := B;
+    CurrentState.Places[_RoomIndex(C, 3)] := A;
+    CurrentState.Places[_RoomIndex(D, 3)] := C;
   end;
 
   // Process toprow
   for i := 0 to 3 do
-    CurrentState.Places[_RoomIndex(TAmphipod(i), 0)] := StrToAmphipod(FInput[2][4 + i*2]);
+    CurrentState.Places[_RoomIndex(TAmphipod(i), 1)] := StrToAmphipod(FInput[2][4 + i*2]);
 
   // Process bottomrow
   for i := 0 to 3 do
-    CurrentState.Places[_RoomIndex(TAmphipod(i), 1 + RoomDepth - 2)] := StrToAmphipod(FInput[3][4 + i*2]);
+    CurrentState.Places[_RoomIndex(TAmphipod(i), RoomDepth)] := StrToAmphipod(FInput[3][4 + i*2]);
 
   if DebugPath then
     CurrentState.Path := CurrentState.AsString;
 
-  Comparer := TComparer<TAmphipodState>.Construct(
-    function(const Left, Right: TAmphipodState): integer
-    begin
-      if Abs(Left.TotalEngergyUsed - Right.TotalEngergyUsed) < 1000 then
-        Result := Sign(Left.TotalEngergyUsed - Right.TotalEngergyUsed)
-      else
-        Result := Sign(Left.GuesedTotalEnergy - Right.GuesedTotalEnergy);
-    end);
-
-  Queue := PriorityQueue<TAmphipodState>.Create(Comparer, Comparer);
+  Queue := TQueue<TAmphipodState>.Create();
   Queue.Enqueue(CurrentState);
+
   Seen := TDictionary<string, boolean>.Create;;
 
   while Queue.Count > 0 do
   begin
     CurrentState := Queue.Dequeue;
+
+    // Found a better result
+    if CurrentState.TotalEngergyUsed > result then
+      Continue;
+
+    // Already checked this situation
     if Seen.ContainsKey(CurrentState.AsString) then
       Continue;
 
     Seen.Add(CurrentState.AsString, true);
-    QueueSize := Queue.Count;
 
-     // Try to move from hallway to room
-    for i := 0 to 10 do
-    begin
-      CurrentAmphipod := CurrentState.Places[i];
-      if (CurrentAmphipod = None) or (not RoomOk(CurrentState, CurrentAmphipod))  then
-        Continue; //Nothing here or room is occupied
+    // Try To Move from room to room
+    _MoveRoomToRoom(CurrentState);
 
-      HallWayIndex := AmphipodInfo[CurrentAmphipod].HallWayIndex;
-
-      if not HallWayClear(CurrentState, Min(HallWayIndex, i+1), Max(HallWayIndex, i-1)) then
-        continue;
-
-      // Can reach it!, calc depth
-      Depth := _Depth(CurrentState, CurrentAmphipod);
-      Queue.Enqueue(UpdateAndCloneState(CurrentState, CurrentAmphipod, CurrentAmphipod, Depth, i));
-    end;
+    // Try to move everything from the hallway to the assigned rooms
+    _MoveHallWayToRoom(CurrentState);
 
     // Try to move from room to hallway
     for CurrentRoom := low(TAmphipod) to High(TAmphipod) do
     begin
-      if (CurrentRoom = none) or RoomOk(CurrentState, CurrentRoom) then
+      if (CurrentRoom = none) or _RoomReady(CurrentState, CurrentRoom) then
         Continue; // Not a room or room is already full
 
       TopAmphipod := _TopAmphipod(CurrentState, CurrentRoom, Depth);
@@ -2604,18 +2608,25 @@ begin
           Continue; // Hallway is blocked
 
         // Can reach it;
-        Queue.Enqueue(UpdateAndCloneState(CurrentState, TopAmphipod, CurrentRoom, Depth, i));
+        NewState := CurrentState;
+        Distance := Depth + _Distance(i, AmphipodInfo[CurrentRoom].HallWayIndex);
+        UpdateState(NewState, TopAmphipod, _RoomIndex(CurrentRoom, Depth), i, Distance);
+        Queue.Enqueue(NewState);
       end;
     end;
 
-    if (QueueSize = Queue.Count) and HallWayClear(CurrentState, 0, 10) then
+    if HallWayClear(CurrentState, 0, 10) and _RoomReady(CurrentState, A) and _RoomReady(CurrentState, B) and _RoomReady(CurrentState, C)   then
     begin
-      if DebugPath then
-        DumpPath(CurrentState.Path);
-
-      Exit(CurrentState.TotalEngergyUsed);
+      if CurrentState.TotalEngergyUsed < Result then
+        BestPath := CurrentState.Path;
+      Result := Min(Result, CurrentState.TotalEngergyUsed);
     end;
   end;
+
+  if DebugPath then
+    DumpPath(BestPath);
+
+  Queue.Free;
 end;
 
 procedure TAdventOfCodeDay23.DumpPath(aPath: string);
